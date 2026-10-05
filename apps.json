@@ -1,0 +1,9 @@
+[
+  {
+    "id": "tower-defence",
+    "name": "Orbital Defence",
+    "description": "Stop asteroids and comets reaching Earth with pulse, nova and cryo towers.",
+    "category": "Games",
+    "path": "apps/tower-defence/"
+  }
+]

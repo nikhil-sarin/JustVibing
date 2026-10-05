@@ -46,12 +46,13 @@
   h1 { margin:10px 0 2px; font-size:28px; } p.sub2 { color:var(--dim); margin:0 0 16px; }
   .type { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:12px; cursor:pointer; }
   .type:active { background:#1a2350; } .type h2 { margin:0 0 4px; font-size:18px; } .type p { margin:0; color:var(--dim); font-size:14px; }
+  .diffrow { display:flex; align-items:center; gap:10px; margin-bottom:14px; color:var(--dim); } .diffrow .tabs { flex:1; }
   a.back { color:var(--dim); text-decoration:none; font-size:14px; }
   #evohead { position:sticky; top:-16px; background:#050818; padding:10px 0 8px; z-index:2; }
   #evohead .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
   #evohead .top b { color:var(--dna); font-size:20px; }
   #evohead .top button { min-height:38px; flex:none; padding:4px 14px; }
-  .tabs { display:flex; gap:6px; } .tabs button { flex:1; min-height:38px; font-size:14px; }
+  .tabs { display:flex; gap:6px; } .tabs button { flex:1; min-height:38px; font-size:13px; padding:4px 2px; }
   .tabs button.on { background:#1a2350; outline:2px solid var(--text); }
   #traits { margin-top:8px; display:grid; gap:8px; }
   .trait { flex-direction:row; justify-content:space-between; text-align:left; gap:10px; padding:10px 12px; width:100%; }
@@ -86,6 +87,7 @@
   <a class="back" href="../../">← All apps</a>
   <h1>Patient Zero</h1>
   <p class="sub2">Evolve a pathogen. Infect the world. Wipe out humanity before they find a cure.</p>
+  <div class="diffrow"><span>Difficulty</span><div class="tabs" id="diffs"></div></div>
   <div id="types"></div>
 </div></div>
 
@@ -133,7 +135,7 @@ const SEA = [["usa","weu"],["bra","ssa"],["sco","saf"],["sea","oce"],["chn","jpk
   ["rus","jpk"],["mea","ssa"],["nam","weu"],["cam","ssa"]];
 
 const TYPES = {
-  bacteria: { name: "Bacteria", beta: 1.0,  cure: 1.0,  drug: 1, mutate: false, desc: "Hardy and balanced. Starts with a little drug resistance." },
+  bacteria: { name: "Bacteria", beta: 1.0,  cure: 1.0,  drug: 1, mutate: false, desc: "Hardy and balanced. Starts with a little drug resistance. Good first pick." },
   virus:    { name: "Virus",    beta: 1.1,  cure: 1.0,  drug: 0, mutate: true,  desc: "Spreads faster, but mutates: it keeps gaining random mild symptoms, which makes it easier to detect." },
   fungus:   { name: "Fungus",   beta: 0.88, cure: 0.72, drug: 0, mutate: false, desc: "Slow and stealthy. Spreads more slowly but the cure takes much longer to develop." },
 };
@@ -154,6 +156,39 @@ const TRAITS = {
   organ:  { tab: "Symptoms", name: "Organ failure", desc: "Lethal: +6.",                        cost: 45, req: "pneu", fx: { sev: 3, leth: 6 } },
   necro:  { tab: "Symptoms", name: "Necrosis",  desc: "Lethal: +10.",                            cost: 60, req: "hemo", fx: { sev: 4, leth: 10 } },
   total:  { tab: "Symptoms", name: "Total organ failure", desc: "Lethal: +14. The end.",         cost: 90, req: "organ", fx: { sev: 5, leth: 14 } },
+  bird:   { tab: "Transmission", name: "Bird migration", desc: "Birds carry you along flight paths. +1 infectivity, faster air spread.", cost: 18, req: "air1", fx: { inf: 1, airBoost: 1 } },
+  water2: { tab: "Transmission", name: "Contaminated water", desc: "+2 infectivity, faster sea spread.", cost: 28, req: "sea1", fx: { inf: 2, seaBoost: 1 } },
+  livestk:{ tab: "Transmission", name: "Livestock", desc: "Farm animals carry it. +2 infectivity.", cost: 18, fx: { inf: 2 } },
+  blood:  { tab: "Transmission", name: "Blood-borne", desc: "+3 infectivity, +1 severity.", cost: 28, req: "insect", fx: { inf: 3, sev: 1 } },
+  saliva: { tab: "Transmission", name: "Saliva", desc: "+2 infectivity.", cost: 14, req: "cough", fx: { inf: 2 } },
+  sweat:  { tab: "Symptoms", name: "Sweating",  desc: "+1 infectivity, +1 severity.",           cost: 8,  fx: { inf: 1, sev: 1 } },
+  insom:  { tab: "Symptoms", name: "Insomnia",  desc: "+1 infectivity, +1 severity.",           cost: 8,  fx: { inf: 1, sev: 1 } },
+  vomit:  { tab: "Symptoms", name: "Vomiting",  desc: "+2 infectivity, +2 severity.",           cost: 16, req: "nausea", fx: { inf: 2, sev: 2 } },
+  diarr:  { tab: "Symptoms", name: "Diarrhoea", desc: "+2 infectivity, +1 severity.",           cost: 14, req: "nausea", fx: { inf: 2, sev: 1 } },
+  cysts:  { tab: "Symptoms", name: "Cysts",     desc: "+1 infectivity, +1 severity.",           cost: 10, req: "rash", fx: { inf: 1, sev: 1 } },
+  seizure:{ tab: "Symptoms", name: "Seizures",  desc: "Lethal: +3.",                            cost: 25, req: "fever", fx: { sev: 3, leth: 3 } },
+  sepsis: { tab: "Symptoms", name: "Sepsis",    desc: "Lethal: +5.",                            cost: 35, req: "vomit", fx: { sev: 3, leth: 5 } },
+  paral:  { tab: "Symptoms", name: "Paralysis", desc: "Lethal: +8.",                            cost: 50, req: "seizure", fx: { sev: 4, leth: 8 } },
+  coma:   { tab: "Symptoms", name: "Coma",      desc: "Lethal: +12.",                           cost: 70, req: "paral", fx: { sev: 4, leth: 12 } },
+  stealth1:{ tab: "Abilities", name: "Symptom suppression", desc: "Hides symptoms: humans notice you 30% less.", cost: 25, fx: { stealth: 1 } },
+  stealth2:{ tab: "Abilities", name: "Symptom suppression II", desc: "Humans notice you 30% less again.", cost: 40, req: "stealth1", fx: { stealth: 1 } },
+  genet1: { tab: "Abilities", name: "Genetic engineering", desc: "Every DNA bubble gives +1 extra.", cost: 30, fx: { dnaBonus: 1 } },
+  genet2: { tab: "Abilities", name: "Genetic engineering II", desc: "Every DNA bubble gives another +1.", cost: 55, req: "genet1", fx: { dnaBonus: 1 } },
+  envhard:{ tab: "Abilities", name: "Environmental hardening", desc: "Better in both cold and hot regions.", cost: 22, fx: { cold: 0.5, heat: 0.5 } },
+  // pathogen-specific
+  v_rep:  { tab: "Special", only: "virus", name: "Rapid replication", desc: "Virus only. +3 infectivity.", cost: 20, fx: { inf: 3 } },
+  v_shift:{ tab: "Special", only: "virus", name: "Antigenic shift", desc: "Virus only. Slows cure research by 18%.", cost: 35, fx: { drug: 2 } },
+  v_lat:  { tab: "Special", only: "virus", name: "Latency", desc: "Virus only. Lies dormant: humans notice you 40% less.", cost: 30, fx: { stealth: 1.4 } },
+  v_mut:  { tab: "Special", only: "virus", name: "Hypermutation", desc: "Virus only. Mutates twice as often (mild symptoms).", cost: 25, fx: { hyper: 1 } },
+  v_cap:  { tab: "Special", only: "virus", name: "Envelope protein", desc: "Virus only. +2 infectivity, ignores rich countries' hygiene.", cost: 30, fx: { inf: 2, hard: 1 } },
+  b_spore:{ tab: "Special", only: "bacteria", name: "Spore formation", desc: "Bacteria only. Resists both cold and heat.", cost: 18, fx: { cold: 1, heat: 1 } },
+  b_film: { tab: "Special", only: "bacteria", name: "Biofilm", desc: "Bacteria only. Slows cure research by 18%.", cost: 30, fx: { drug: 2 } },
+  b_toxin:{ tab: "Special", only: "bacteria", name: "Toxins", desc: "Bacteria only. Lethal +4, severity +2.", cost: 28, fx: { sev: 2, leth: 4 } },
+  b_dup:  { tab: "Special", only: "bacteria", name: "Binary fission", desc: "Bacteria only. +3 infectivity.", cost: 22, fx: { inf: 3 } },
+  f_bloom:{ tab: "Special", only: "fungus", name: "Spore bloom", desc: "Fungus only. +3 infectivity.", cost: 18, fx: { inf: 3 } },
+  f_dorm: { tab: "Special", only: "fungus", name: "Dormancy", desc: "Fungus only. Humans notice you 45% less.", cost: 25, fx: { stealth: 1.5 } },
+  f_myco: { tab: "Special", only: "fungus", name: "Mycotoxins", desc: "Fungus only. Lethal +5, severity +2.", cost: 30, fx: { sev: 2, leth: 5 } },
+  f_net:  { tab: "Special", only: "fungus", name: "Mycelial network", desc: "Fungus only. +2 infectivity, faster land spread.", cost: 22, fx: { inf: 2, landBoost: 1 } },
   cold:   { tab: "Abilities", name: "Cold resistance", desc: "Thrives in cold regions.",         cost: 15, fx: { cold: 1 } },
   heat:   { tab: "Abilities", name: "Heat resistance", desc: "Thrives in hot regions.",          cost: 15, fx: { heat: 1 } },
   drug1:  { tab: "Abilities", name: "Drug resistance",   desc: "Slows cure research by 9%.",     cost: 20, fx: { drug: 1 } },
@@ -161,7 +196,13 @@ const TRAITS = {
   drug3:  { tab: "Abilities", name: "Drug resistance III", desc: "Slows cure research by 9% more.", cost: 45, req: "drug2", fx: { drug: 1 } },
   hard:   { tab: "Abilities", name: "Hardened spores", desc: "Rich countries' hygiene no longer slows you.", cost: 25, fx: { hard: 1 } },
 };
-const TABS = ["Transmission", "Symptoms", "Abilities"];
+const DIFF = {
+  easy:   { label: "Easy",   dna: 1.6, cure: 1.15, startI: 3000, startDna: 16 },
+  normal: { label: "Normal", dna: 1.0, cure: 1.8,  startI: 500,  startDna: 10 },
+  hard:   { label: "Hard",   dna: 0.7, cure: 2.5,  startI: 1,    startDna: 8 },
+};
+const TABS = ["Transmission", "Symptoms", "Abilities", "Special"];
+const TAB_LABEL = { Transmission: "Spread", Symptoms: "Symptoms", Abilities: "Abilities", Special: "Special" };
 
 // ---------- helpers ----------
 const $ = id => document.getElementById(id);
@@ -181,8 +222,9 @@ const landN = {}, seaN = {};
 
 function newGame(type) {
   const T = TYPES[type];
-  S = { type, day: 0, dna: 6, started: false, over: false, speed: 1, cure: 0, detected: false,
-        owned: new Set(), st: null, bubbles: [], fx: [], news: [], flags: {}, nextMutation: 25, R: [] };
+  const diff = store.get("pz-diff", "easy");
+  S = { type, diff: DIFF[diff] ? diff : "easy", day: 0, dna: DIFF[DIFF[diff] ? diff : "easy"].startDna, started: false, over: false, speed: 1, cure: 0, detected: false,
+        owned: new Set(), dnaAcc: 0, st: null, bubbles: [], fx: [], news: [], flags: {}, nextMutation: 25, R: [] };
   for (const k in landN) delete landN[k]; for (const k in seaN) delete seaN[k];
   S.R = REG.map(([id, name, short, x, y, popM, w, cl, air, sea]) => {
     const r = { id, name, short, x, y, popM, w, cl, air, sea, N: popM * 1e6, I: 0, D: 0, airClosed: false, landClosed: false,
@@ -196,7 +238,7 @@ function newGame(type) {
   S.speed = 1; ui();
 }
 function calc() {
-  const T = TYPES[S.type], s = { inf: 0, sev: 0, leth: 0, drug: T.drug, cold: 0, heat: 0, air: 0, sea: 0, hard: 0 };
+  const T = TYPES[S.type], s = { inf: 0, sev: 0, leth: 0, drug: T.drug, cold: 0, heat: 0, air: 0, sea: 0, hard: 0, airBoost: 0, seaBoost: 0, landBoost: 0, stealth: 0, dnaBonus: 0, hyper: 0 };
   for (const id of S.owned) for (const k in TRAITS[id].fx) s[k] += TRAITS[id].fx[k];
   s.air = Math.min(1, s.air); s.sea = Math.min(1, s.sea); S.st = s;
 }
@@ -205,7 +247,7 @@ function say(msg) { S.news.unshift(msg); if (S.news.length > 30) S.news.pop(); r
 // ---------- simulation (one tick = one day) ----------
 function seed(dst, how, src) {
   if (dst.I > 0 || dst.D >= dst.N || S.flags["wiped" + dst.id]) return;
-  dst.I = 1; S.dna += 3;
+  dst.I = 1; S.dna += Math.round(5 * DIFF[S.diff].dna);
   say(`Infection reaches ${dst.name}${src ? " by " + how + " from " + src.short : ""}.`);
   if (how === "air" && src) S.fx.push({ x1: src.x, y1: src.y, x2: dst.x, y2: dst.y, t: 0, dur: 1.2, c: "#fff" });
   if (how === "sea" && src) S.fx.push({ x1: src.x, y1: src.y, x2: dst.x, y2: dst.y, t: 0, dur: 1.8, c: "#7dd3ff" });
@@ -221,10 +263,12 @@ function tickDay() {
       if (r.cl === "cold") clim = Math.min(1.15, 0.6 + 0.5 * st.cold);
       else if (r.cl === "hot") clim = Math.min(1.15, 0.7 + 0.45 * st.heat);
       const wealth = st.hard ? 1 : 1.25 - 0.09 * r.w;
-      const beta = (0.08 + 0.014 * st.inf) * clim * wealth * T.beta;
+      const beta = (0.095 + 0.015 * st.inf) * clim * wealth * T.beta;
       // floor on growth so the last small pockets of healthy people still get infected (mop-up phase)
-      r.I += Math.min(heal, Math.max(beta * r.I * heal / r.N, beta * r.I * 0.03));
-      const dd = Math.min(r.I, r.I * st.leth * 0.0035);
+      const living = Math.max(1, r.N - r.D);   // transmission depends on the living population, not the dead
+      r.I += Math.min(heal, Math.max(beta * r.I * heal / living, beta * r.I * 0.03));
+      // lethality ramps in as the region fills up, so a small early outbreak can't be killed off before it spreads
+      const dd = Math.min(r.I, r.I * st.leth * 0.0035 * Math.min(1, r.I / Math.max(1, r.N - r.D) * 8));
       r.I -= dd; r.D += dd;
       if (dd > 0 && !S.flags.firstDeath) { S.flags.firstDeath = 1; say(`First deaths reported in ${r.name}.`); }
       if (r.N - r.D < 200) { r.D = r.N; r.I = 0; if (!S.flags["wiped" + r.id]) { S.flags["wiped" + r.id] = 1; say(`${r.name} has been wiped out.`); } }
@@ -234,43 +278,44 @@ function tickDay() {
 
   // spread
   for (const r of S.R) if (r.I >= 1) {
-    for (const n of landN[r.id]) if (!r.landClosed && !n.landClosed && Math.random() < 1 - Math.exp(-r.I / 2e5)) seed(n, "land", r);
-    if (st.air && r.air && !r.airClosed && Math.random() < 1 - Math.exp(-r.I / 1.5e6)) {
+    for (const n of landN[r.id]) if (!r.landClosed && !n.landClosed && Math.random() < 1 - Math.exp(-r.I / 2e5 * (1 + 0.6 * st.landBoost))) seed(n, "land", r);
+    if (st.air && r.air && !r.airClosed && Math.random() < 1 - Math.exp(-r.I / 1.5e6 * (1 + 0.6 * st.airBoost))) {
       const opts = S.R.filter(o => o !== r && o.air && !o.airClosed);
       if (opts.length) seed(opts[Math.random() * opts.length | 0], "air", r);
     }
-    if (st.sea && r.sea) for (const n of seaN[r.id]) if (n.sea && Math.random() < 1 - Math.exp(-r.I / 2.5e6)) seed(n, "sea", r);
+    if (st.sea && r.sea) for (const n of seaN[r.id]) if (n.sea && Math.random() < 1 - Math.exp(-r.I / 2.5e6 * (1 + 0.6 * st.seaBoost))) seed(n, "sea", r);
   }
 
   // detection and cure
-  const infFrac = wI / wN, deadFrac = wD / wN;
-  if (!S.detected && (wD > 10000 || (st.sev >= 5 && wI > 50000) || infFrac > 0.04)) {
+  const infFrac = wI / wN, deadFrac = wD / wN, effSev = st.sev * Math.max(0.2, 1 - 0.3 * st.stealth);
+  if (!S.detected && (wD > 10000 || (effSev >= 5 && wI > 50000) || infFrac > 0.05)) {
     S.detected = true; say("Scientists have identified a new pathogen. Cure research begins.");
   }
-  const aware = S.detected ? Math.min(1, infFrac * 1.5 + deadFrac * 3 + st.sev * 0.015) : 0;
+  const aware = S.detected ? Math.min(1, infFrac * 1.5 + deadFrac * 3 + effSev * 0.015) : 0;
   if (S.detected) {
     let rs = 0, rw = 0;
     for (const r of S.R) { rs += r.w * (r.N - r.D) / r.N; rw += r.w; }
-    S.cure = Math.min(1, S.cure + 0.0030 * (rs / rw) * (0.4 + 2.6 * aware) * Math.max(0.3, 1 - 0.09 * st.drug) * T.cure);
+    S.cure = Math.min(1, S.cure + 0.0022 * (rs / rw) * (0.4 + 2.6 * aware) * Math.max(0.3, 1 - 0.09 * st.drug) * T.cure * DIFF[S.diff].cure);
     for (const m of [0.25, 0.5, 0.75, 0.9]) if (S.cure >= m && !S.flags["cure" + m]) { S.flags["cure" + m] = 1; say(`Cure research is ${m * 100}% complete!`); }
   }
   for (const r of S.R) {
     const f = r.I / r.N;
-    const air = S.detected && aware > 0.25 && f > 0.01, land = S.detected && aware > 0.5 && f > 0.08;
+    const air = S.detected && aware > 0.35 && f > 0.02, land = S.detected && aware > 0.65 && f > 0.12;
     if (air && !r.airClosed) say(`${r.name} closes its airports.`);
     if (land && !r.landClosed) say(`${r.name} closes its borders.`);
     r.airClosed = r.airClosed || air; r.landClosed = r.landClosed || land;
   }
 
   // DNA bubbles
-  if (infRegions > 0 && Math.random() < Math.min(0.7, 0.22 + 0.04 * infRegions)) {
-    const pool = S.R.filter(r => r.I >= 1), r = pool[Math.random() * pool.length | 0], big = Math.random() < 0.12;
-    S.bubbles.push({ x: r.x + (Math.random() - .5) * radius(r), y: r.y + (Math.random() - .5) * radius(r), v: big ? 5 : 1 + (Math.random() * 2 | 0), ttl: 9, big });
+  if (infRegions > 0) { S.dna += (0.1 + 0.02 * infRegions) * DIFF[S.diff].dna; }   // slow passive DNA trickle
+  if (infRegions > 0 && Math.random() < Math.min(0.9, 0.38 + 0.05 * infRegions)) {
+    const pool = S.R.filter(r => r.I >= 1), r = pool[Math.random() * pool.length | 0], big = Math.random() < 0.15;
+    S.bubbles.push({ x: r.x + (Math.random() - .5) * radius(r), y: r.y + (Math.random() - .5) * radius(r), v: Math.max(1, Math.round((big ? 5 : 1 + (Math.random() * 2 | 0)) * DIFF[S.diff].dna)), ttl: 14, big });
   }
 
   // virus mutation
   if (T.mutate && S.day >= S.nextMutation) {
-    S.nextMutation = S.day + 22 + (Math.random() * 12 | 0);
+    S.nextMutation = S.day + (22 + (Math.random() * 12 | 0)) / (st.hyper ? 2 : 1);
     const opts = Object.keys(TRAITS).filter(k => TRAITS[k].tab === "Symptoms" && !TRAITS[k].fx.leth && !S.owned.has(k) && (!TRAITS[k].req || S.owned.has(TRAITS[k].req)));
     if (opts.length) { const k = opts[Math.random() * opts.length | 0]; S.owned.add(k); calc(); say(`Mutation! Your virus gained ${TRAITS[k].name}.`); }
   }
@@ -312,13 +357,14 @@ function renderCard() {
   }
   el.innerHTML = html;
 }
-function canBuy(k) { const t = TRAITS[k]; return !S.owned.has(k) && (!t.req || S.owned.has(t.req)); }
+const visible = k => !TRAITS[k].only || TRAITS[k].only === S.type;
+function canBuy(k) { const t = TRAITS[k]; return visible(k) && !S.owned.has(k) && (!t.req || S.owned.has(t.req)); }
 function renderEvolve() {
   const tabs = $("tabs"); tabs.replaceChildren();
-  for (const t of TABS) { const b = document.createElement("button"); b.textContent = t; b.className = t === tab ? "on" : ""; b.onclick = () => { tab = t; renderEvolve(); }; tabs.append(b); }
+  for (const t of TABS) { const b = document.createElement("button"); b.textContent = TAB_LABEL[t]; b.className = t === tab ? "on" : ""; b.onclick = () => { tab = t; renderEvolve(); }; tabs.append(b); }
   const list = $("traits"); list.replaceChildren();
   for (const [id, t] of Object.entries(TRAITS)) {
-    if (t.tab !== tab) continue;
+    if (t.tab !== tab || !visible(id)) continue;
     const b = document.createElement("button"); b.className = "trait";
     const owned = S.owned.has(id), locked = t.req && !S.owned.has(t.req), poor = !owned && !locked && S.dna < t.cost;
     if (owned) b.classList.add("owned"); if (locked) b.classList.add("locked"); if (poor) b.classList.add("poor");
@@ -334,7 +380,15 @@ $("evoclose").onclick = () => $("evolve").classList.remove("show");
 $("speed").onclick = () => { if (S.over) return; const seq = [1, 2, 4, 0]; S.speed = seq[(seq.indexOf(S.speed) + 1) % seq.length]; ui(); };
 $("menu").onclick = () => { if (S.started && !S.over && !confirm("Abandon this outbreak and start over?")) return; showStart(); };
 $("again").onclick = showStart;
+function renderDiffs() {
+  const cur = store.get("pz-diff", "easy"), box = $("diffs"); box.replaceChildren();
+  for (const [k, d] of Object.entries(DIFF)) {
+    const b = document.createElement("button"); b.textContent = d.label; b.className = k === cur ? "on" : "";
+    b.onclick = () => { store.set("pz-diff", k); renderDiffs(); }; box.append(b);
+  }
+}
 function showStart() {
+  renderDiffs();
   const box = $("types"); box.replaceChildren();
   for (const [k, t] of Object.entries(TYPES)) {
     const d = document.createElement("div"); d.className = "type";
@@ -350,13 +404,13 @@ cv.addEventListener("pointerdown", ev => {
   const rc = cv.getBoundingClientRect(), x = (ev.clientX - rc.left) / rc.width * 100, y = (ev.clientY - rc.top) / rc.height * MAPH;
   for (let i = S.bubbles.length - 1; i >= 0; i--) {
     const b = S.bubbles[i];
-    if (Math.hypot(b.x - x, b.y - y) < (b.big ? 4.5 : 3.6)) { S.dna += b.v; S.bubbles.splice(i, 1); if (navigator.vibrate) try { navigator.vibrate(15); } catch {} ui(); return; }
+    if (Math.hypot(b.x - x, b.y - y) < (b.big ? 5.5 : 4.6)) { S.dna += b.v + S.st.dnaBonus; S.bubbles.splice(i, 1); if (navigator.vibrate) try { navigator.vibrate(15); } catch {} ui(); return; }
   }
   let best = null, bd = 1e9;
   for (const r of S.R) { const d = Math.hypot(r.x - x, r.y - y) - radius(r); if (d < bd) { bd = d; best = r; } }
   if (!best || bd > 2) { selected = null; renderCard(); return; }
   if (!S.started) {
-    S.started = true; best.I = 1; selected = best; say(`Patient Zero: ${best.name}. The outbreak begins.`);
+    S.started = true; best.I = DIFF[S.diff].startI; selected = best; say(`Patient Zero: ${best.name}. The outbreak begins.`);
   } else selected = best;
   renderCard(); ui();
 });

@@ -2,8 +2,15 @@
   {
     "id": "tower-defence",
     "name": "Orbital Defence",
-    "description": "Tower defence: 3 maps, 3 towers, each with branching upgrade paths.",
+    "description": "Tower defence: 3 maps, 4 towers with branching upgrades, armoured/flying/splitting enemies, targeting modes and abilities.",
     "category": "Games",
     "path": "apps/tower-defence/"
+  },
+  {
+    "id": "patient-zero",
+    "name": "Patient Zero",
+    "description": "Evolve a pathogen and infect the world before humanity finds a cure. Plague Inc-style strategy.",
+    "category": "Games",
+    "path": "apps/patient-zero/"
   }
 ]

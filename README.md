@@ -8,6 +8,7 @@ apps.json         list of apps shown on the landing page
 apps/
   _template/      copy this to start a new app
   tower-defence/  Orbital Defence
+  patient-zero/   Patient Zero (Plague Inc-style pandemic strategy)
 ```
 
 ## Adding an app

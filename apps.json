@@ -12,5 +12,12 @@
     "description": "Evolve a pathogen and infect the world before humanity finds a cure. Plague Inc-style strategy.",
     "category": "Games",
     "path": "apps/patient-zero/"
+  },
+  {
+    "id": "magic-sort",
+    "name": "Magic Sort",
+    "description": "Potion-sorting puzzle: pour colours until every flask is one shade. Endless levels, hints, undo and fog levels.",
+    "category": "Games",
+    "path": "apps/magic-sort/"
   }
 ]

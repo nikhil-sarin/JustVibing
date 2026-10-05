@@ -1,0 +1,11 @@
+{
+  "name": "Magic Sort",
+  "short_name": "Magic Sort",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#140a2e",
+  "theme_color": "#140a2e",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

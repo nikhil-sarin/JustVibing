@@ -12,6 +12,7 @@ apps/
   magic-sort/     Magic Sort (potion colour-sorting puzzle)
   hardline/       Hardline (first-person wave shooter, raycast 3D engine)
   smash-dillan-pc/ Smash Dillan PC (first-person stealth, find and hammer the PC)
+  prank-dillan/   Prank Dillan (2D cutaway-house prank game, Neighbours-from-Hell style)
 ```
 
 ## Adding an app

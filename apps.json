@@ -33,5 +33,12 @@
     "description": "First-person stealth: sneak round the house, dodge Dillan, find his PC and hammer it to bits.",
     "category": "Games",
     "path": "apps/smash-dillan-pc/"
+  },
+  {
+    "id": "prank-dillan",
+    "name": "Prank Dillan",
+    "description": "Neighbours-from-Hell-style prank game: rig traps round a cutaway house and film Dillan's chaos for the TV audience. 4 episodes, 13 pranks.",
+    "category": "Games",
+    "path": "apps/prank-dillan/"
   }
 ]

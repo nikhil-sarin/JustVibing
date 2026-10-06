@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#14233a"/>
+  <rect x="86" y="170" width="340" height="250" fill="#f2d9a0"/><path d="M66 180L256 80l190 100z" fill="#c0392b"/>
+  <rect x="86" y="296" width="340" height="12" fill="#8a5a2b"/>
+  <rect x="120" y="205" width="70" height="70" fill="#9fd0ff"/><rect x="322" y="205" width="70" height="70" fill="#9fd0ff"/>
+  <circle cx="256" cy="360" r="30" fill="#3b2f2f"/><circle cx="256" cy="320" r="22" fill="#e0b08c"/><path d="M234 316a22 22 0 0 1 44 0z" fill="#16e0a0"/>
+  <text x="256" y="416" font-size="64" text-anchor="middle">🍌</text>
+  <text x="400" y="130" font-size="70" text-anchor="middle">💥</text>
+</svg>

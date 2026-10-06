@@ -1,0 +1,11 @@
+{
+  "name": "Prank Dillan",
+  "short_name": "Prank Dillan",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#14233a",
+  "theme_color": "#14233a",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

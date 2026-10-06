@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#14233a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Prank Dillan</title>
+<style>
+  :root { --bg:#14233a; --panel:#1b2f4d; --line:#34507a; --text:#f4f7ff; --dim:#9fb3d4; --red:#ff5d6c; --gold:#ffd93d; --green:#5dffa0; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; height: 100%; background: #0d1626; color: var(--text); overflow: hidden; overscroll-behavior: none; touch-action: none;
+    font: 15px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; -webkit-user-select: none; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #pad { position: fixed; inset: 0; pointer-events: none; display: none; } body.touch #pad.on { display: block; }
+  .btn { position: absolute; pointer-events: auto; border-radius: 50%; border: 2px solid #ffffff77; background: #ffffff22; color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; touch-action: none; user-select: none; text-align: center; line-height: 1.05; }
+  .btn.down { background: #ffffff55; }
+  #bL { left: max(14px, env(safe-area-inset-left)); bottom: 18px; width: 84px; height: 84px; font-size: 34px; } #bR { left: calc(max(14px, env(safe-area-inset-left)) + 98px); bottom: 18px; width: 84px; height: 84px; font-size: 34px; }
+  #bAct { right: max(18px, env(safe-area-inset-right)); bottom: 18px; width: 100px; height: 100px; font-size: 17px; background: #ffd93d33; border-color: #ffd93dcc; }
+  #bUp { right: 128px; bottom: 104px; width: 64px; height: 64px; font-size: 24px; } #bDn { right: 128px; bottom: 26px; width: 64px; height: 64px; font-size: 24px; }
+  #bPause { right: 12px; top: 10px; width: 38px; height: 38px; font-size: 15px; opacity: .8; }
+  .overlay { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; background: #0d1626ee; padding: 14px; overflow: auto; touch-action: pan-y; }
+  .overlay.show { display: flex; }
+  .card { width: 100%; max-width: 560px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; max-height: 100%; overflow: auto; }
+  .card h1 { margin: 0 0 2px; font-size: 28px; line-height: 1.05; } .card h1 span { color: var(--gold); }
+  .card p.sub { color: var(--dim); margin: 0 0 10px; }
+  .card h3 { margin: 12px 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.b { font: inherit; color: var(--text); background: #223a5e; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 44px; cursor: pointer; flex: 1; }
+  button.b.on { background: #34507a; outline: 2px solid var(--text); } button.b:disabled { opacity: .4; }
+  button.go { background: #7a5a10; border-color: #c9962a; font-weight: 800; font-size: 17px; margin-top: 12px; width: 100%; min-height: 52px; position: sticky; bottom: 0; }
+  input[type=text] { font: inherit; color: var(--text); background: #0f1a2e; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; user-select: text; -webkit-user-select: text; }
+  #grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  #grid button { min-height: 62px; } #grid small { display: block; color: var(--gold); letter-spacing: 1px; }
+  .help { color: var(--dim); font-size: 13px; line-height: 1.5; } .help b { color: var(--text); }
+  .stat { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #28426a; color: var(--dim); } .stat b { color: var(--text); }
+  .stars { font-size: 38px; letter-spacing: 6px; margin: 4px 0; } .stars .off { opacity: .25; filter: grayscale(1); }
+  .quip { font-style: italic; color: var(--gold); margin: 4px 0 8px; }
+  a.back { color: var(--dim); text-decoration: none; font-size: 14px; }
+  @media (max-height: 520px) { .card { padding: 12px 16px; } .card h1 { font-size: 22px; } .card h3 { margin: 8px 0 4px; } button.b { min-height: 38px; padding: 6px 10px; } button.go { margin-top: 8px; min-height: 46px; } #grid button { min-height: 52px; } }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="pad">
+  <div id="bL" class="btn">◀</div><div id="bR" class="btn">▶</div>
+  <div id="bUp" class="btn">▲</div><div id="bDn" class="btn">▼</div><div id="bAct" class="btn">ACT</div>
+  <div id="bPause" class="btn">⏸</div>
+</div>
+
+<div id="menu" class="overlay show"><div class="card">
+  <a class="back" href="../../">← All apps</a>
+  <h1 id="title">PRANK <span>DILLAN</span></h1>
+  <p class="sub">Sneak round the house, rig traps, and film the chaos for the TV audience. Don't get caught!</p>
+  <h3>Your neighbour's name</h3><input type="text" id="nameIn" maxlength="14" value="Dillan" autocomplete="off">
+  <h3>Choose an episode</h3><div id="grid"></div>
+  <h3>Sound</h3><div class="row" id="soundBtns"></div>
+  <h3>How to play</h3><div class="help" id="helpTxt"></div>
+  <button class="b go" id="startBtn">START EPISODE</button>
+  <button class="b" id="fsBtn" style="margin-top:8px;width:100%">⛶ Fullscreen / landscape</button>
+</div></div>
+
+<div id="pause" class="overlay"><div class="card"><h1>PAUSED</h1>
+  <button class="b go" id="resumeBtn">RESUME</button><button class="b" id="restartBtn" style="margin-top:8px;width:100%">Restart episode</button><button class="b" id="quitBtn" style="margin-top:8px;width:100%">Quit to menu</button></div></div>
+
+<div id="win" class="overlay"><div class="card">
+  <h1 style="color:var(--green)">EPISODE COMPLETE!</h1><div class="stars" id="stars"></div><div class="quip" id="quip"></div><div id="winStats"></div>
+  <button class="b go" id="nextBtn">NEXT EPISODE</button><button class="b" id="winMenu" style="margin-top:8px;width:100%">Menu</button></div></div>
+
+<div id="fail" class="overlay"><div class="card">
+  <h1 style="color:var(--red)" id="failTitle">CANCELLED!</h1><div class="quip" id="failQuip"></div>
+  <button class="b go" id="retryBtn">TRY AGAIN</button><button class="b" id="failMenu" style="margin-top:8px;width:100%">Menu</button></div></div>
+
+<script>
+"use strict";
+// ============================================================
+// data
+// ============================================================
+const FH = 170, TOP = 44, GRD = 54;       // floor height, roof band, ground band
+const SPD = 120, CHASE = 138, STAIR = 34; // player speed, chase speed, stair half-width
+const ITEMS = {
+  banana: "🍌", marbles: "🔮", rope: "🧵", bucket: "🪣", whoopee: "🎈", glue: "🧴", firework: "🎆", pepper: "🌶️",
+  hairdye: "🧪", mousetrap: "🪤", spider: "🕷️", scissors: "✂️", hammer: "🔨",
+};
+const ITEMNAME = { banana: "banana peel", marbles: "marbles", rope: "trip wire", bucket: "water bucket", whoopee: "whoopee cushion", glue: "super glue", firework: "firework", pepper: "hot pepper", hairdye: "green hair dye", mousetrap: "mousetrap", spider: "rubber spider", scissors: "scissors", hammer: "hammer" };
+const PRANK = {   // what each item does when it goes off
+  banana:   { pts: 25, anim: "slip", stun: 3.2, text: "SLIP!", snd: "slip", quip: "WHO LEFT A BANANA?!" },
+  marbles:  { pts: 30, anim: "slip", stun: 3.4, text: "WHOOOA!", snd: "slip", quip: "MARBLES?! REALLY?!" },
+  rope:     { pts: 25, anim: "slip", stun: 3, text: "TRIPPED!", snd: "slip", quip: "WHO PUT THAT THERE?!" },
+  bucket:   { pts: 30, anim: "soak", stun: 2.8, text: "SPLASH!", snd: "splash", quip: "MY HOODIE!!" },
+  whoopee:  { pts: 20, anim: "jump", stun: 2, text: "PFFFFT!", snd: "fart", quip: "THAT WASN'T ME!" },
+  glue:     { pts: 25, anim: "stuck", stun: 3.2, text: "STUCK!", snd: "rip", quip: "MY TROUSERS!!" },
+  firework: { pts: 35, anim: "burn", stun: 3.6, text: "BOOOOM!", snd: "boom", quip: "MY EYEBROWS!!" },
+  pepper:   { pts: 30, anim: "hot", stun: 3.2, text: "HOT HOT HOT!", snd: "scream", quip: "WHO MADE THIS CURRY?!" },
+  hairdye:  { pts: 30, anim: "hair", stun: 3, text: "GREEN HAIR!", snd: "scream", quip: "MY HAIR!!!" },
+  mousetrap:{ pts: 25, anim: "jump", stun: 2.6, text: "SNAP!", snd: "snap", quip: "MY TOES!!" },
+  spider:   { pts: 20, anim: "jump", stun: 2.4, text: "SPIDER!!", snd: "scream", quip: "AAAAAAAAH!" },
+  scissors: { pts: 35, anim: "cry", stun: 3.4, text: "WIFI DOWN!", snd: "sad", quip: "MY PING!!! IT'S 999!!" },
+  hammer:   { pts: 50, anim: "cry", stun: 4.2, text: "SMASH!", snd: "smash", quip: "NOOOO! MY 4090!!!" },
+};
+
+// level: rooms [floor, x0, x1, name, theme]; props [type, floor, x]; hot = hotspots; items [item, floor, x]; hides [floor, x]; routine = Dillan's day
+const LEVELS = [
+  { name: "The Flat", floors: 1, W: 1200, target: 60, time: 150, vig: 1,
+    rooms: [[0, 0, 420, "Lounge", "lounge"], [0, 420, 800, "Kitchen", "kitchen"], [0, 800, 1200, "Bathroom", "bath"]], stairs: [],
+    props: [["window", 0, 120], ["painting", 0, 400], ["plant", 0, 36], ["sofa", 0, 210], ["tv", 0, 330], ["stove", 0, 520], ["table", 0, 640], ["fridge", 0, 730], ["toilet", 0, 880], ["sink", 0, 985], ["shower", 0, 1110], ["wardrobe", 0, 30], ["basket", 0, 1175]],
+    hot: [{ id: "sofa", f: 0, x: 210, kind: "sit", acc: ["whoopee", "glue", "firework"], name: "sofa" }, { id: "pot", f: 0, x: 520, kind: "use", acc: ["pepper"], name: "cooking pot" },
+      { id: "trap1", f: 0, x: 650, kind: "floor", acc: ["banana", "marbles", "rope"], name: "kitchen floor" }, { id: "door1", f: 0, x: 800, kind: "door", acc: ["bucket"], name: "bathroom door" },
+      { id: "shower", f: 0, x: 1110, kind: "use", acc: ["hairdye", "spider"], name: "shower" }],
+    items: [["whoopee", 0, 90], ["glue", 0, 380], ["banana", 0, 470], ["pepper", 0, 770], ["bucket", 0, 930], ["hairdye", 0, 1030]],
+    hides: [[0, 30], [0, 1175]],
+    routine: [{ f: 0, x: 210, act: "tv", t: 9, hot: ["sofa"] }, { f: 0, x: 520, act: "cook", t: 8, hot: ["pot"] }, { f: 0, x: 620, act: "eat", t: 6, hot: [] }, { f: 0, x: 1110, act: "shower", t: 9, hot: ["shower"] }], ri0: 3, start: [0, 140] },
+
+  { name: "The Maisonette", floors: 2, W: 1100, target: 85, time: 200, vig: 1.1,
+    rooms: [[0, 0, 550, "Lounge", "lounge"], [0, 550, 1100, "Kitchen", "kitchen"], [1, 0, 550, "Bedroom", "bedroom"], [1, 550, 1100, "Bathroom", "bath"]], stairs: [{ x: 520, a: 0 }],
+    props: [["tv", 0, 120], ["sofa", 0, 260], ["plant", 0, 36], ["painting", 0, 400], ["stove", 0, 660], ["table", 0, 810], ["fridge", 0, 1040], ["window", 0, 920], ["bed", 1, 150], ["wardrobe", 1, 40], ["desk", 1, 400], ["toilet", 1, 640], ["sink", 1, 760], ["shower", 1, 1040], ["basket", 1, 1075], ["window", 1, 300], ["wardrobe", 0, 30]],
+    hot: [{ id: "sofa", f: 0, x: 260, kind: "sit", acc: ["whoopee", "glue", "firework"], name: "sofa" }, { id: "pot", f: 0, x: 660, kind: "use", acc: ["pepper"], name: "cooking pot" },
+      { id: "trapA", f: 0, x: 420, kind: "floor", acc: ["banana", "marbles", "rope"], name: "lounge floor" }, { id: "trapB", f: 0, x: 760, kind: "floor", acc: ["banana", "marbles", "rope"], name: "kitchen floor" },
+      { id: "bed", f: 1, x: 150, kind: "use", acc: ["firework", "mousetrap", "spider"], name: "bed" }, { id: "door", f: 1, x: 550, kind: "door", acc: ["bucket"], name: "bathroom door" },
+      { id: "trapC", f: 1, x: 300, kind: "floor", acc: ["banana", "marbles", "rope", "mousetrap"], name: "bedroom floor" }, { id: "trapD", f: 1, x: 650, kind: "floor", acc: ["banana", "marbles", "rope"], name: "landing" },
+      { id: "shower", f: 1, x: 1040, kind: "use", acc: ["hairdye", "spider"], name: "shower" }],
+    items: [["whoopee", 0, 80], ["firework", 0, 380], ["banana", 0, 600], ["pepper", 0, 980], ["marbles", 0, 880], ["glue", 0, 330], ["bucket", 1, 700], ["hairdye", 1, 900], ["mousetrap", 1, 250], ["spider", 1, 120]],
+    hides: [[0, 30], [1, 40], [1, 1075]],
+    routine: [{ f: 0, x: 260, act: "tv", t: 9, hot: ["sofa"] }, { f: 0, x: 660, act: "cook", t: 8, hot: ["pot"] }, { f: 0, x: 860, act: "eat", t: 6, hot: [] }, { f: 1, x: 1040, act: "shower", t: 9, hot: ["shower"] }, { f: 1, x: 150, act: "sleep", t: 10, hot: ["bed"] }], ri0: 4, start: [0, 430] },
+
+  { name: "The Gamer Den", floors: 2, W: 1300, target: 110, time: 240, vig: 1.2,
+    rooms: [[0, 0, 430, "Kitchen", "kitchen"], [0, 430, 870, "Lounge", "lounge"], [0, 870, 1300, "Hall", "hall"], [1, 0, 650, "Gaming Den", "gaming"], [1, 650, 1300, "Bathroom", "bath"]], stairs: [{ x: 1000, a: 0 }],
+    props: [["stove", 0, 110], ["table", 0, 250], ["fridge", 0, 390], ["tv", 0, 520], ["plant", 0, 460], ["sofa", 0, 700], ["painting", 0, 830], ["plant", 0, 900], ["toolbox", 0, 1200], ["wardrobe", 0, 1100], ["window", 0, 300],
+      ["router", 1, 100], ["pc", 1, 260], ["gchair", 1, 335], ["wardrobe", 1, 620], ["window", 1, 480], ["toilet", 1, 760], ["sink", 1, 860], ["shower", 1, 1220], ["basket", 1, 1275], ["painting", 1, 560]],
+    hot: [{ id: "pot", f: 0, x: 110, kind: "use", acc: ["pepper"], name: "cooking pot" }, { id: "sofa", f: 0, x: 700, kind: "sit", acc: ["whoopee", "glue", "firework"], name: "sofa" },
+      { id: "trapK", f: 0, x: 330, kind: "floor", acc: ["banana", "marbles", "rope"], name: "kitchen floor" }, { id: "trapH", f: 0, x: 900, kind: "floor", acc: ["banana", "marbles", "rope"], name: "hall floor" },
+      { id: "router", f: 1, x: 100, kind: "use", acc: ["scissors"], name: "router" }, { id: "pc", f: 1, x: 260, kind: "use", acc: ["spider", "hammer"], name: "gaming PC" }, { id: "chair", f: 1, x: 335, kind: "sit", acc: ["glue", "whoopee", "firework"], name: "gaming chair" },
+      { id: "door", f: 1, x: 650, kind: "door", acc: ["bucket"], name: "bathroom door" }, { id: "trapB", f: 1, x: 800, kind: "floor", acc: ["banana", "marbles", "rope"], name: "bathroom floor" }, { id: "shower", f: 1, x: 1220, kind: "use", acc: ["hairdye", "spider"], name: "shower" }],
+    items: [["banana", 0, 40], ["scissors", 0, 190], ["pepper", 0, 400], ["whoopee", 0, 560], ["glue", 0, 770], ["hammer", 0, 1210], ["firework", 0, 1270], ["rope", 1, 20], ["marbles", 1, 540], ["spider", 1, 780], ["bucket", 1, 930], ["hairdye", 1, 1030]],
+    hides: [[0, 1100], [1, 620], [1, 1275]],
+    routine: [{ f: 0, x: 700, act: "tv", t: 8, hot: ["sofa"] }, { f: 0, x: 110, act: "cook", t: 7, hot: ["pot"] }, { f: 1, x: 100, act: "router", t: 5, hot: ["router"] }, { f: 1, x: 335, act: "game", t: 14, hot: ["chair", "pc"] }, { f: 1, x: 1220, act: "shower", t: 9, hot: ["shower"] }], ri0: 4, start: [0, 600] },
+
+  { name: "The Mansion", floors: 3, W: 1400, target: 150, time: 320, vig: 1.35,
+    rooms: [[0, 0, 450, "Kitchen", "kitchen"], [0, 450, 950, "Dining Room", "lounge"], [0, 950, 1400, "Lounge", "hall"], [1, 0, 500, "Bedroom", "bedroom"], [1, 500, 950, "Bathroom", "bath"], [1, 950, 1400, "Den", "gaming"], [2, 0, 700, "Study", "study"], [2, 700, 1400, "Games Room", "gaming"]],
+    stairs: [{ x: 450, a: 0 }, { x: 950, a: 1 }],
+    props: [["stove", 0, 110], ["fridge", 0, 300], ["table", 0, 700], ["window", 0, 580], ["painting", 0, 820], ["tv", 0, 1100], ["sofa", 0, 1250], ["plant", 0, 1030], ["wardrobe", 0, 30],
+      ["bed", 1, 150], ["wardrobe", 1, 40], ["window", 1, 330], ["toilet", 1, 600], ["sink", 1, 700], ["shower", 1, 880], ["basket", 1, 920], ["pc", 1, 1100], ["gchair", 1, 1175], ["router", 1, 1340],
+      ["bookcase", 2, 100], ["armchair", 2, 300], ["desk", 2, 520], ["window", 2, 660], ["pc", 2, 800], ["gchair", 2, 875], ["tv", 2, 1100], ["sofa", 2, 1260], ["wardrobe", 2, 1370], ["toolbox", 2, 20]],
+    hot: [{ id: "pot", f: 0, x: 110, kind: "use", acc: ["pepper"], name: "cooking pot" }, { id: "dchair", f: 0, x: 690, kind: "sit", acc: ["glue", "whoopee", "firework"], name: "dining chair" }, { id: "sofa", f: 0, x: 1250, kind: "sit", acc: ["whoopee", "glue", "firework"], name: "sofa" },
+      { id: "trapA", f: 0, x: 340, kind: "floor", acc: ["banana", "marbles", "rope"], name: "kitchen floor" }, { id: "trapB", f: 0, x: 1000, kind: "floor", acc: ["banana", "marbles", "rope"], name: "lounge floor" },
+      { id: "bed", f: 1, x: 150, kind: "use", acc: ["firework", "mousetrap", "spider"], name: "bed" }, { id: "door", f: 1, x: 500, kind: "door", acc: ["bucket"], name: "bathroom door" }, { id: "shower", f: 1, x: 880, kind: "use", acc: ["hairdye", "spider"], name: "shower" },
+      { id: "pc1", f: 1, x: 1100, kind: "use", acc: ["spider", "hammer"], name: "gaming PC" }, { id: "router", f: 1, x: 1340, kind: "use", acc: ["scissors"], name: "router" },
+      { id: "armchair", f: 2, x: 300, kind: "sit", acc: ["glue", "whoopee", "firework"], name: "armchair" }, { id: "pc2", f: 2, x: 800, kind: "use", acc: ["spider", "hammer"], name: "streaming PC" },
+      { id: "trapS", f: 2, x: 500, kind: "floor", acc: ["banana", "marbles", "rope"], name: "study floor" }],
+    items: [["banana", 0, 50], ["pepper", 0, 380], ["whoopee", 0, 560], ["glue", 0, 640], ["marbles", 0, 1040], ["mousetrap", 0, 1330], ["bucket", 1, 560], ["hairdye", 1, 760], ["scissors", 1, 300], ["firework", 1, 700], ["spider", 1, 1030], ["rope", 1, 1250], ["hammer", 2, 40], ["banana", 2, 640], ["whoopee", 2, 1000]],
+    hides: [[0, 30], [1, 40], [1, 920], [2, 1370]],
+    routine: [{ f: 0, x: 110, act: "cook", t: 7, hot: ["pot"] }, { f: 0, x: 690, act: "eat", t: 7, hot: ["dchair"] }, { f: 0, x: 1250, act: "tv", t: 8, hot: ["sofa"] }, { f: 1, x: 1100, act: "game", t: 12, hot: ["pc1"] }, { f: 1, x: 1340, act: "router", t: 4, hot: ["router"] },
+      { f: 1, x: 880, act: "shower", t: 8, hot: ["shower"] }, { f: 1, x: 150, act: "sleep", t: 8, hot: ["bed"] }, { f: 2, x: 300, act: "read", t: 8, hot: ["armchair"] }, { f: 2, x: 800, act: "game", t: 12, hot: ["pc2"] }], ri0: 6, start: [0, 560] },
+];
+
+// ============================================================
+// helpers / audio
+// ============================================================
+const $ = id => document.getElementById(id);
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const SET = Object.assign({ name: "Dillan", sound: true }, store.get("pd-settings", {})), saveSet = () => store.set("pd-settings", SET);
+let PROG = Object.assign({ max: 1, stars: {} }, store.get("pd-progress", {}));
+const NAME = () => (SET.name || "Dillan").trim() || "Dillan";
+const isTouch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window; if (isTouch) document.body.classList.add("touch");
+const cv = $("cv"), c = cv.getContext("2d");
+
+let AC = null, noiseBuf = null;
+function ac() { if (!SET.sound) return null; if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; } } if (AC.state === "suspended") AC.resume(); return AC; }
+function tone(f, dur, type = "sine", vol = 0.15, slide = 0, delay = 0) { const a = ac(); if (!a) return; const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + delay; o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, f + slide), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur); }
+function burst(dur, vol, hp = 400, lp = 6000, delay = 0) { const a = ac(); if (!a) return; if (!noiseBuf) { noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = a.createBufferSource(), h = a.createBiquadFilter(), l = a.createBiquadFilter(), g = a.createGain(), t = a.currentTime + delay; s.buffer = noiseBuf; h.type = "highpass"; h.frequency.value = hp; l.type = "lowpass"; l.frequency.value = lp; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); s.connect(h).connect(l).connect(g).connect(a.destination); s.start(t, Math.random() * 0.5); s.stop(t + dur); }
+const SND = {
+  slip: () => { tone(1300, 0.45, "triangle", 0.18, -1050); tone(90, 0.2, "sine", 0.3, -40, 0.42); burst(0.08, 0.2, 100, 900, 0.42); },
+  splash: () => { burst(0.6, 0.4, 200, 2500); tone(300, 0.3, "sine", 0.1, -150); },
+  fart: () => { tone(140, 0.5, "sawtooth", 0.18, -70); burst(0.45, 0.14, 80, 700); },
+  rip: () => { burst(0.4, 0.3, 1500, 9000); tone(200, 0.3, "sawtooth", 0.1, 300); },
+  boom: () => { burst(0.9, 0.6, 40, 1800); tone(55, 0.8, "sawtooth", 0.3, -30); },
+  scream: () => { tone(420, 0.7, "sawtooth", 0.15, 450); tone(300, 0.7, "square", 0.08, 380, 0.03); },
+  snap: () => { burst(0.05, 0.4, 800, 6000); tone(900, 0.1, "square", 0.1, -600, 0.03); tone(380, 0.5, "sawtooth", 0.12, 200, 0.1); },
+  sad: () => [392, 349, 311, 262].forEach((f, i) => tone(f, 0.3, "sawtooth", 0.13, -15, i * 0.26)),
+  smash: () => { burst(0.5, 0.55, 150, 4000); tone(80, 0.3, "sawtooth", 0.3, -40); tone(2400, 0.12, "triangle", 0.1, -900, 0.05); tone(500, 0.9, "sawtooth", 0.12, 400, 0.4); },
+  laugh: () => { for (let i = 0; i < 7; i++) { tone(300 + Math.random() * 180, 0.09, "sawtooth", 0.05, 80, i * 0.1); } burst(0.8, 0.07, 1500, 7000, 0.1); },
+  cheer: () => { burst(1.1, 0.12, 800, 6000); for (let i = 0; i < 4; i++) tone(600 + i * 160, 0.3, "triangle", 0.05, 0, i * 0.08); },
+  pick: () => tone(700, 0.08, "triangle", 0.12, 500), set: () => { tone(400, 0.07, "square", 0.08); tone(600, 0.1, "square", 0.08, 0, 0.06); }, bad: () => tone(200, 0.15, "square", 0.08, -40),
+  alert: () => { tone(900, 0.12, "square", 0.12, 400); tone(1100, 0.12, "square", 0.1, 300, 0.1); }, caught: () => [330, 262, 196].forEach((f, i) => tone(f, 0.35, "sawtooth", 0.15, -20, i * 0.25)),
+  win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, "triangle", 0.15, 0, i * 0.12)), step: () => tone(120, 0.03, "square", 0.015),
+};
+
+// ============================================================
+// game state
+// ============================================================
+let L = null, G = null, state = "menu", curLevel = 1, menuLevel = 1;
+const input = { left: false, right: false, up: false, down: false, act: false, eUp: false, eDown: false, eAct: false };
+const fyOf = f => TOP + (L.floors - f) * FH;
+const stairFeet = s => ({ xb: s.x - STAIR, xt: s.x + STAIR });
+const roomAt = (f, x) => { let r = -1; L.rooms.forEach((rm, i) => { if (rm[0] === f && x >= rm[1] && x < rm[2]) r = i; }); return r < 0 ? L.rooms.findIndex(rm => rm[0] === f && x >= rm[2] - 1) : r; };
+
+function startLevel(n) {
+  camF = null; curLevel = n; L = LEVELS[(n - 1) % LEVELS.length]; const hot = {}; L.hot.forEach(h => hot[h.id] = { ...h, item: null });
+  const r0 = L.routine[L.ri0];
+  G = { t: L.time, lives: 3, rating: 0, ratingPts: 0, hot, items: L.items.map(([item, f, x]) => ({ item, f, x, hx: x, hf: f })), P: { x: L.start[1], f: L.start[0], face: 1, walk: 0, climb: null, carry: null, hidden: null, hurt: 0 },
+        N: { x: r0.x, f: r0.f, face: -1, state: "routine", ri: L.ri0, acting: false, actT: 0, fired: {}, aware: 0, stun: 0, fx: null, search: 0, searchX: r0.x, lastSeen: null, findT: 0, climb: null, walk: 0, hairGreen: false, say: null, sayT: 0, lostT: 0 },
+        texts: [], parts: [], pop: [], flags: {}, catches: 0, winT: 0, comboT: 0, comboN: 0, time: 0, hint: "" };
+  G.N.x = r0.x; state = "playing"; hideOverlays(); $("pad").classList.add("on");
+  const hasStairs = L.stairs.length > 0; G.hint = `Episode ${n}: ${L.name}. Grab items, rig traps, then let ${NAME()} walk into them!`; G.hintT = 6;
+}
+
+function say(t, s = 2.2) { G.N.say = t; G.N.sayT = s; }
+function floatText(x, f, txt, col = "#fff", big = 1) { G.pop.push({ x, y: fyOf(f) - 100, txt, col, t: 1.4, big }); }
+function nearestStair(f, x, dir) {   // dir +1: climbing up from floor f, -1: down from floor f
+  for (const s of L.stairs) { const { xb, xt } = stairFeet(s); if (dir > 0 && s.a === f && Math.abs(x - xb) < 40) return s; if (dir < 0 && s.a === f - 1 && Math.abs(x - xt) < 40) return s; } return null;
+}
+function stairBetween(f, g2) { const a = Math.min(f, g2); return L.stairs.find(s => s.a === a) || null; }
+
+// ============================================================
+// update
+// ============================================================
+function update(dt) {
+  G.time += dt; G.t -= dt; G.hintT -= dt; G.comboT -= dt;
+  if (G.t <= 0 && G.winT <= 0) { fail("time"); return; }
+  updatePlayer(dt); updateN(dt);
+  for (const p of G.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; } G.parts = G.parts.filter(p => p.life > 0);
+  for (const p of G.pop) { p.t -= dt; p.y -= 24 * dt; } G.pop = G.pop.filter(p => p.t > 0);
+  if (G.N.sayT > 0) G.N.sayT -= dt;
+  if (G.winT > 0) { G.winT -= dt; if (G.winT <= 0) win(); }
+  input.eUp = input.eDown = input.eAct = false;
+}
+function updatePlayer(dt) {
+  const P = G.P;
+  if (P.hurt > 0) P.hurt -= dt;
+  if (P.climb) { P.climb.t += dt / P.climb.dur; if (P.climb.t >= 1) { P.f = P.climb.f1; P.x = P.climb.x1; P.climb = null; } return; }
+  if (P.hidden) { if (input.eUp || input.eDown || input.eAct || input.left || input.right) { P.hidden = null; } return; }
+  const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  if (dir) { P.x = clamp(P.x + dir * SPD * dt, 16, L.W - 16); P.face = dir; P.walk += dt * 11; if (Math.floor(P.walk / 3) !== Math.floor((P.walk - dt * 11) / 3)) SND.step(); }
+  if (input.eUp) { const s = nearestStair(P.f, P.x, 1); if (s && s.a + 1 < L.floors) { const { xb, xt } = stairFeet(s); P.climb = { t: 0, dur: 0.8, f0: P.f, f1: P.f + 1, x0: xb, x1: xt }; P.x = xb; } }
+  else if (input.eDown) { const s = nearestStair(P.f, P.x, -1); if (s) { const { xb, xt } = stairFeet(s); P.climb = { t: 0, dur: 0.8, f0: P.f, f1: P.f - 1, x0: xt, x1: xb }; P.x = xt; }
+    else { const h = L.hides.find(([f, x]) => f === P.f && Math.abs(x - P.x) < 36); if (h) { P.hidden = h; P.x = h[1]; } } }
+  if (input.eAct) doAct();
+  // pick up hint text
+  const near = nearItem(P), hot = hotNear(P);
+  G.ctx = P.carry ? (hot && !hot.item && hot.acc.includes(P.carry) ? `ACT: set ${ITEMNAME[P.carry]} on the ${hot.name}` : near ? `ACT: swap for ${ITEMNAME[near.item]}` : `ACT: drop ${ITEMNAME[P.carry]}`) : (near ? `ACT: pick up ${ITEMNAME[near.item]}` : "");
+}
+const nearItem = P => G.items.filter(i => i.f === P.f && Math.abs(i.x - P.x) < 38).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x))[0] || null;
+function hotNear(P) { return Object.values(G.hot).filter(h => h.f === P.f && Math.abs(h.x - P.x) < 46 && (!P.carry || h.acc.includes(P.carry))).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x))[0] || null; }
+function doAct() {
+  const P = G.P, near = nearItem(P), hot = Object.values(G.hot).filter(h => h.f === P.f && Math.abs(h.x - P.x) < 46).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x));
+  if (P.carry) {
+    const h = hot.find(h => h.acc.includes(P.carry) && !h.item);
+    if (h) { h.item = P.carry; P.carry = null; SND.set(); floatText(h.x, h.f, "Trap set!", "#ffd93d"); G.hint = ""; return; }
+    if (hot.length && !near) { SND.bad(); floatText(P.x, P.f, "Doesn't go here", "#ff9d9d"); return; }
+    if (near) { const old = P.carry; P.carry = near.item; near.item = old; SND.pick(); return; }
+    G.items.push({ item: P.carry, f: P.f, x: P.x, hx: P.x, hf: P.f }); P.carry = null; return;
+  }
+  if (near) { P.carry = near.item; G.items.splice(G.items.indexOf(near), 1); SND.pick(); return; }
+  const armed = hot.find(h => h.item); if (armed) { G.items.push({ item: armed.item, f: armed.f, x: armed.x, hx: armed.x, hf: armed.f }); armed.item = null; SND.pick(); }   // un-set a trap
+}
+
+// ---------- Dillan ----------
+function seesPlayer() {
+  if (G.blind) return false; const N = G.N, P = G.P; if (P.hidden) return false; const pf = P.climb ? P.climb.f0 : P.f; if (N.climb) return false;
+  const pfl = P.climb ? (P.climb.t > 0.5 ? P.climb.f1 : P.climb.f0) : P.f; if (pfl !== N.f) return false;
+  const px = P.climb ? lerp(P.climb.x0, P.climb.x1, P.climb.t) : P.x, d = Math.abs(px - N.x);
+  const r1 = roomAt(N.f, N.x), r2 = roomAt(N.f, px), sameRoom = r1 === r2 || [L.rooms[r1], L.rooms[r2]].some(rm => rm && (Math.abs(px - rm[1]) < 26 || Math.abs(px - rm[2]) < 26) && Math.abs(N.x - px) < 70);
+  if (!sameRoom) return false;
+  let range = 330 * L.vig, act = N.acting ? L.routine[N.ri].act : null;
+  if (act === "shower" || act === "sleep") range *= 0.12; else if (act === "tv" || act === "game" || act === "cook") range *= 0.55; else if (N.state === "stunned") range = 0;
+  const facing = Math.sign(px - N.x) === N.face || d < 80; return facing && d < range;
+}
+function updateN(dt) {
+  const N = G.N, P = G.P; N.walk += dt * 9;
+  if (N.climb) { N.climb.t += dt / 0.9; if (N.climb.t >= 1) { N.f = N.climb.f1; N.x = N.climb.x1; N.climb = null; } return; }
+  const sees = (N.state !== "stunned" && N.state !== "catch") && seesPlayer();
+  if (sees) { const d = Math.abs(P.x - N.x); N.aware = Math.min(1, N.aware + dt * (0.9 + (1 - Math.min(1, d / 330)) * 2.2)); N.lastSeen = { f: P.f, x: P.x }; N.lostT = 0; } else N.aware = Math.max(0, N.aware - dt * 0.5);
+  if (N.aware >= 1 && N.state !== "chase" && N.state !== "stunned" && N.state !== "catch") { N.state = "chase"; N.acting = false; N.findT = 0; say(["HEY!!", "GOT YOU!", "WHAT ARE YOU DOING IN MY HOUSE?!", "YOU AGAIN!"][Math.random() * 4 | 0], 2); SND.alert(); }
+  switch (N.state) {
+    case "stunned": N.stun -= dt; if (N.stun <= 0) { N.fx = null; N.state = "search"; N.search = 6; N.aware = 0.2; say("I'm going to find out who did that!", 2.4); } break;
+    case "search": { N.search -= dt; const rm = L.rooms[roomAt(N.f, N.x)] || [0, 0, 300]; if (Math.abs(N.x - N.searchX) < 4) N.searchX = clamp(rm[1] + 40 + Math.random() * (rm[2] - rm[1] - 80), 30, L.W - 30); moveX(N, N.searchX, 70, dt); if (N.search <= 0) { N.state = "routine"; N.acting = false; } break; }
+    case "chase": {
+      const tgt = sees ? { f: P.climb ? P.climb.f1 : P.f, x: P.x } : N.lastSeen; if (!sees) N.lostT += dt;
+      if (tgt) { if (P.hidden && N.lastSeen) { const arrived = N.f === N.lastSeen.f && Math.abs(N.x - N.lastSeen.x) < 30; if (arrived) { N.findT += dt; if (N.findT > 1.6 && Math.random() < dt * 0.7) { caught(); return; } if (N.findT > 4.5) { N.state = "search"; N.search = 4; N.aware = 0; } } else walkTo(N, tgt.f, tgt.x, CHASE * 0.8, dt); } else walkTo(N, tgt.f, tgt.x, CHASE, dt); }
+      if (!P.hidden && !P.climb && P.f === N.f && Math.abs(P.x - N.x) < 26) { caught(); return; }
+      if (N.lostT > 3.2 && !P.hidden) { N.state = "search"; N.search = 5; N.aware = 0; say("Where did they go...", 2); }
+      break; }
+    case "catch": break;
+    default: routineStep(N, dt);
+  }
+  // floor / door traps trigger for anyone who walks over them
+  if (N.state !== "stunned" && N.state !== "catch") for (const h of Object.values(G.hot)) if (h.item && (h.kind === "floor" || h.kind === "door") && h.f === N.f && Math.abs(N.x - h.x) < 16) { trigger(h); break; }
+}
+function routineStep(N, dt) {
+  const s = L.routine[N.ri];
+  if (!N.acting) { if (walkTo(N, s.f, s.x, 82, dt)) { N.acting = true; N.actT = 0; N.fired = {}; N.face = -N.face || 1; } return; }
+  N.actT += dt; s.hot.forEach((id, i) => { const h = G.hot[id]; if (h && h.item && !N.fired[id] && N.actT > 1 + i * 2.6) { N.fired[id] = 1; trigger(h); } });
+  if (N.state === "routine" && N.actT >= s.t) { N.ri = (N.ri + 1) % L.routine.length; N.acting = false; }
+}
+function moveX(e, tx, sp, dt) { const dx = tx - e.x, st = Math.min(Math.abs(dx), sp * dt); if (st > 0) { e.x += Math.sign(dx) * st; e.face = Math.sign(dx); } }
+function walkTo(e, tf, tx, sp, dt) {   // true when arrived
+  if (e.f !== tf) {
+    const d = Math.sign(tf - e.f), s = stairBetween(e.f, e.f + d); if (!s) return false; const { xb, xt } = stairFeet(s), foot = d > 0 ? xb : xt;
+    if (Math.abs(e.x - foot) > 3) { moveX(e, foot, sp, dt); return false; }
+    e.x = foot; e.climb = { t: 0, f0: e.f, f1: e.f + d, x0: foot, x1: d > 0 ? xt : xb }; return false;
+  }
+  if (Math.abs(e.x - tx) <= 3) return true; moveX(e, tx, sp, dt); return false;
+}
+function trigger(h) {
+  const N = G.N, e = PRANK[h.item]; const item = h.item; h.item = null; N.state = "stunned"; N.stun = e.stun; N.fx = { type: e.anim, t: 0, item }; N.acting = false; N.aware = 0;
+  if (N.ri !== undefined && L.routine[N.ri] && (h.kind === "sit" || h.kind === "use")) { /* he finishes this stop later */ }
+  let pts = e.pts; if (G.comboT > 0) { G.comboN++; pts += 8 * G.comboN; floatText(N.x + 40, N.f, `COMBO x${G.comboN + 1}!`, "#7dffb0"); } else G.comboN = 0; G.comboT = 20;
+  G.ratingPts = (G.ratingPts || 0) + pts; G.rating = Math.min(100, G.ratingPts / L.target * 100);
+  floatText(N.x, N.f, e.text, "#ffd93d", 1.6); floatText(N.x - 30, N.f, "+" + pts, "#7dffb0"); say(e.quip, Math.max(2.4, e.stun - 0.3)); SND[e.snd](); setTimeout(() => SND.laugh(), 350);
+  if (item === "hairdye") N.hairGreen = true; if (item === "hammer") G.flags.pcSmashed = h.id;
+  for (let i = 0; i < 14; i++) G.parts.push({ x: N.x, y: fyOf(N.f) - 50, vx: (Math.random() - 0.5) * 240, vy: -Math.random() * 220, life: 0.9, e: ["⭐", "💥", "💫"][i % 3] });
+  if (G.ratingPts >= L.target && G.winT <= 0) { G.winT = e.stun * 0.7 + 0.8; setTimeout(() => SND.cheer(), 600); }
+}
+function caught() {
+  const N = G.N, P = G.P; if (N.state === "catch") return; N.state = "catch"; G.catches++; G.lives--; SND.caught(); say("GOTCHA!", 2); P.hurt = 1.2;
+  if (P.carry) { G.items.push({ item: P.carry, f: P.f, x: P.x, hx: P.x, hf: P.f }); P.carry = null; }
+  setTimeout(() => { if (state !== "playing") return; if (G.lives <= 0) { fail("lives"); return; }
+    P.x = L.start[1]; P.f = L.start[0]; P.hidden = null; P.climb = null; const s = L.routine[L.ri0]; N.x = s.x; N.f = s.f; N.ri = L.ri0; N.state = "routine"; N.acting = false; N.aware = 0; N.climb = null; N.lastSeen = null; G.hint = `Phew! ${G.lives} ${G.lives === 1 ? "life" : "lives"} left.`; G.hintT = 3; }, 1400);
+}
+function win() {
+  if (state !== "playing") return; state = "won"; SND.win(); const left = G.t / L.time, stars = G.catches === 0 && left > 0.35 ? 3 : G.catches <= 1 && left > 0.15 ? 2 : 1;
+  PROG.stars[curLevel] = Math.max(PROG.stars[curLevel] || 0, stars); PROG.max = Math.max(PROG.max, Math.min(LEVELS.length, curLevel + 1)); store.set("pd-progress", PROG);
+  $("stars").innerHTML = [1, 2, 3].map(i => `<span class="${i <= stars ? "" : "off"}">⭐</span>`).join("");
+  const q = [`${NAME()}'s trousers will never be the same.`, `The studio audience is in tears. ${NAME()} is also in tears.`, `${NAME()} has filed a complaint with the neighbourhood watch.`, `Ratings through the roof. ${NAME()}'s blood pressure too.`, `"WHO DID THIS?!" – ${NAME()}, every day.`];
+  $("quip").textContent = q[Math.random() * q.length | 0];
+  $("winStats").innerHTML = [["Episode", `${curLevel}: ${L.name}`], ["Time left", Math.round(G.t) + "s"], ["Times caught", G.catches], ["Lives left", G.lives]].map(([a, b]) => `<div class="stat"><span>${a}</span><b>${b}</b></div>`).join("");
+  $("nextBtn").style.display = curLevel < LEVELS.length ? "" : "none"; setTimeout(() => $("win").classList.add("show"), 400);
+}
+function fail(why) {
+  if (state !== "playing") return; state = "failed"; SND.sad();
+  $("failTitle").textContent = why === "time" ? "TIME'S UP!" : "SHOW CANCELLED!"; $("failQuip").textContent = why === "time" ? `${NAME()} went to bed. The audience demands a refund.` : `${NAME()} caught you three times and banned you from the street.`;
+  setTimeout(() => $("fail").classList.add("show"), 500);
+}
+
+// ============================================================
+// drawing
+// ============================================================
+let VW = 0, VH = 0, DPR = 1, K = 1, camX = 0, camF = null, T0 = 0;
+function resize() { VW = innerWidth; VH = innerHeight; DPR = Math.min(2, devicePixelRatio || 1); cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR); }
+addEventListener("resize", resize);
+const THEME = {
+  lounge: ["#e8c9a0", "#d9b283", "#8a5a3a"], kitchen: ["#f1f4f6", "#dfe6ea", "#7a8a99"], bath: ["#bfe8f0", "#a6d8e4", "#6aa9bb"], bedroom: ["#b9c6f0", "#a2b1e6", "#6a5aa0"],
+  hall: ["#e6dcc8", "#d6c9ad", "#7a6a4a"], gaming: ["#5b4a86", "#4b3d73", "#2a2048"], study: ["#d8c4a0", "#c6af86", "#6a4a2a"],
+};
+function rrect(x, y, w, h, r, fill, stroke) { c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.stroke(); } }
+const R = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+function emoji(e, x, y, size, alpha = 1) { c.globalAlpha = alpha; c.font = `${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(e, x, y); c.globalAlpha = 1; c.textBaseline = "alphabetic"; }
+
+function drawHouse() {
+  const W = L.W, H = TOP + L.floors * FH + GRD;
+  // sky + ground
+  const sg = c.createLinearGradient(0, -400, 0, H); sg.addColorStop(0, "#5fb4f5"); sg.addColorStop(1, "#d6efff"); c.fillStyle = sg; c.fillRect(-1000, -500, W + 2000, H + 600);
+  R(-1000, TOP + L.floors * FH, W + 2000, GRD + 600, "#5aa84a"); R(-1000, TOP + L.floors * FH + 14, W + 2000, 8, "#4a8c3c");
+  emoji("☁️", 160, 10, 46); emoji("☁️", W - 220, 0, 38); emoji("🌳", -50, TOP + L.floors * FH - 26, 90); emoji("🌳", W + 60, TOP + L.floors * FH - 26, 90);
+  // roof
+  c.fillStyle = "#b5483b"; c.beginPath(); c.moveTo(-26, TOP); c.lineTo(W / 2, -26); c.lineTo(W + 26, TOP); c.closePath(); c.fill(); R(-26, TOP - 6, W + 52, 10, "#8c3329");
+  R(W * 0.75, -14, 28, 40, "#8a4a3a");
+  // floors
+  for (let f = 0; f < L.floors; f++) {
+    const y1 = fyOf(f), y0 = y1 - FH + 14;
+    for (const rm of L.rooms) if (rm[0] === f) { const th = THEME[rm[4]] || THEME.lounge, x0 = rm[1], x1 = rm[2]; R(x0, y0, x1 - x0, FH - 14, th[0]);
+      c.fillStyle = th[1]; if (rm[4] === "kitchen" || rm[4] === "bath") { for (let x = x0; x < x1; x += 26) R(x, y0, 1, FH - 14, "#00000012"); for (let y = y0; y < y1; y += 26) R(x0, y, x1 - x0, 1, "#00000012"); } else for (let x = x0 + 10; x < x1; x += 40) R(x, y0, 14, FH - 14, th[1]);
+      R(x0, y1 - 14, x1 - x0, 14, th[2] + "55"); R(x0, y0, x1 - x0, 6, "#00000022");
+      c.fillStyle = "#ffffffcc"; c.font = "bold 12px system-ui"; c.textAlign = "left"; c.globalAlpha = 0.55; c.fillStyle = "#000"; c.fillText(rm[3].toUpperCase(), x0 + 10, y0 + 22); c.globalAlpha = 1; }
+    R(0, y1, W, 14, "#9a6a3a"); R(0, y1 + 12, W, 3, "#6a4524");      // floor slab
+    // walls between rooms (with a door opening)
+    for (const rm of L.rooms) if (rm[0] === f && rm[1] > 0) { R(rm[1] - 3, y0, 6, y1 - 118 - y0, "#5a4636"); R(rm[1] - 3, y1 - 118, 6, 118, "#00000000"); R(rm[1] - 12, y1 - 122, 24, 6, "#7a5a3a"); R(rm[1] - 12, y1 - 118, 4, 104, "#7a5a3a"); R(rm[1] + 8, y1 - 118, 4, 104, "#7a5a3a"); }
+  }
+  R(-6, TOP - 4, 8, L.floors * FH + 8, "#5a4636"); R(W - 2, TOP - 4, 8, L.floors * FH + 8, "#5a4636");
+  // stairs
+  for (const s of L.stairs) { const { xb, xt } = stairFeet(s), y1 = fyOf(s.a), y2 = fyOf(s.a + 1); c.fillStyle = "#8a5a2b"; c.beginPath(); c.moveTo(xb - 14, y1); c.lineTo(xt + 14, y2); c.lineTo(xt + 14, y1); c.closePath(); c.fill(); c.fillStyle = "#b07a3c"; const n = 9; for (let i = 0; i < n; i++) { const t = i / n, xx = lerp(xb - 14, xt + 14, t), yy = lerp(y1, y2, t); R(xx, yy, (xt - xb + 28) / n + 1, 4, "#c99a5a"); } c.strokeStyle = "#5a3a1a"; c.lineWidth = 3; c.beginPath(); c.moveTo(xb - 14, y1 - 52); c.lineTo(xt + 14, y2 - 52); c.stroke(); c.lineWidth = 1; }
+}
+function drawProp(t, f, x) {
+  const y = fyOf(f);
+  switch (t) {
+    case "sofa": rrect(x - 75, y - 52, 150, 50, 8, "#a0414f"); rrect(x - 82, y - 66, 164, 30, 10, "#b8505f"); rrect(x - 90, y - 52, 22, 50, 8, "#8a3441"); rrect(x + 68, y - 52, 22, 50, 8, "#8a3441"); R(x - 60, y - 40, 56, 22, "#c0606f"); R(x + 4, y - 40, 56, 22, "#c0606f"); R(x - 78, y - 3, 8, 6, "#3a2020"); R(x + 70, y - 3, 8, 6, "#3a2020"); break;
+    case "tv": R(x - 6, y - 40, 12, 40, "#4a3a2a"); R(x - 50, y - 44, 100, 8, "#6a5030"); rrect(x - 46, y - 112, 92, 66, 5, "#16181c"); R(x - 40, y - 106, 80, 54, `hsl(${(T0 * 40) % 360},60%,45%)`); R(x - 40, y - 106, 80, 6, "#ffffff22"); break;
+    case "plant": R(x - 14, y - 26, 28, 26, "#a0522d"); c.fillStyle = "#2f9e44"; for (const [a, b, r] of [[0, -56, 22], [-18, -42, 16], [18, -42, 16], [0, -78, 14]]) { c.beginPath(); c.arc(x + a, y + b, r, 0, 7); c.fill(); } break;
+    case "window": R(x - 38, y - 130, 76, 70, "#7a5a3a"); R(x - 33, y - 125, 66, 60, "#9fd8ff"); R(x - 2, y - 125, 4, 60, "#7a5a3a"); R(x - 33, y - 97, 66, 4, "#7a5a3a"); emoji("☀️", x - 16, y - 108, 18, 0.9); break;
+    case "painting": R(x - 26, y - 118, 52, 38, "#6a4a2a"); R(x - 22, y - 114, 44, 30, "#8ec5a4"); c.fillStyle = "#e8c35a"; c.beginPath(); c.arc(x - 8, y - 104, 6, 0, 7); c.fill(); break;
+    case "stove": R(x - 54, y - 54, 108, 54, "#d8dde2"); R(x - 54, y - 58, 108, 6, "#3a3f48"); R(x - 40, y - 28, 80, 20, "#b8bec6"); R(x - 14, y - 32, 28, 4, "#555"); R(x - 54, y - 130, 108, 22, "#9aa3ad"); R(x - 32, y - 108, 64, 6, "#6a727c");
+      R(x - 20, y - 78, 40, 20, "#6a727c"); R(x - 24, y - 82, 48, 6, "#8a929c"); emoji("♨️", x + 30, y - 96, 18, 0.7); break;
+    case "fridge": rrect(x - 34, y - 126, 68, 126, 6, "#e6eaee"); R(x - 34, y - 70, 68, 3, "#9aa3ab"); R(x + 20, y - 112, 5, 26, "#8a929a"); R(x + 20, y - 62, 5, 26, "#8a929a"); R(x - 24, y - 108, 18, 12, "#ffd93d"); break;
+    case "table": R(x - 56, y - 52, 112, 8, "#a8743a"); R(x - 50, y - 44, 8, 44, "#7a5226"); R(x + 42, y - 44, 8, 44, "#7a5226"); R(x - 74, y - 38, 14, 4, "#7a5226"); R(x - 74, y - 34, 4, 34, "#7a5226"); R(x + 60, y - 34, 4, 34, "#7a5226"); R(x - 12, y - 66, 24, 14, "#f2f2f2"); R(x - 4, y - 70, 8, 5, "#d33"); break;
+    case "toilet": R(x - 16, y - 70, 32, 30, "#f4f4f4"); rrect(x - 22, y - 42, 44, 22, 8, "#fafafa"); R(x - 12, y - 20, 24, 20, "#e0e0e0"); break;
+    case "sink": R(x - 30, y - 44, 60, 8, "#f0f0f0"); R(x - 6, y - 36, 12, 36, "#e0e0e0"); R(x - 24, y - 118, 48, 46, "#8fd3e8"); R(x - 24, y - 118, 48, 4, "#6aa9bb"); break;
+    case "shower": R(x - 36, y - 138, 72, 138, "#ffffff55"); R(x - 36, y - 138, 72, 5, "#9ab"); R(x - 36, y - 138, 4, 138, "#9ab"); R(x + 32, y - 138, 4, 138, "#9ab"); R(x - 3, y - 126, 6, 24, "#7a828a"); R(x - 12, y - 130, 24, 6, "#7a828a"); c.strokeStyle = "#7fd0ff"; c.lineWidth = 1.2; for (let i = 0; i < 6; i++) { const t = ((T0 * 80 + i * 17) % 80); c.beginPath(); c.moveTo(x - 10 + i * 4, y - 122 + t); c.lineTo(x - 10 + i * 4, y - 114 + t); c.stroke(); } break;
+    case "bed": R(x - 80, y - 36, 160, 28, "#6a8ee8"); R(x - 80, y - 8, 160, 8, "#6a4a2a"); R(x - 86, y - 70, 14, 70, "#6a4a2a"); rrect(x - 72, y - 50, 44, 16, 8, "#fff"); R(x - 20, y - 36, 100, 8, "#9ab4f5"); break;
+    case "wardrobe": R(x - 32, y - 118, 64, 118, "#7a5226"); R(x - 28, y - 114, 27, 110, "#8c6232"); R(x + 1, y - 114, 27, 110, "#8c6232"); R(x - 6, y - 64, 4, 10, "#e0c060"); R(x + 2, y - 64, 4, 10, "#e0c060"); break;
+    case "basket": rrect(x - 18, y - 40, 36, 40, 6, "#c89a5a"); R(x - 16, y - 44, 32, 6, "#a87a3a"); R(x - 6, y - 52, 12, 10, "#e04a5a"); break;
+    case "desk": R(x - 62, y - 54, 124, 8, "#a8743a"); R(x - 56, y - 46, 8, 46, "#7a5226"); R(x + 48, y - 46, 8, 46, "#7a5226"); R(x - 18, y - 84, 36, 30, "#16181c"); R(x - 15, y - 81, 30, 24, "#2a6adf"); R(x - 4, y - 54, 8, 4, "#333"); break;
+    case "pc": { const wreck = G.flags.pcSmashed; R(x - 66, y - 52, 132, 8, "#a8743a"); R(x - 60, y - 44, 8, 44, "#7a5226"); R(x + 52, y - 44, 8, 44, "#7a5226");
+      if (wreck) { c.fillStyle = "#2a2d36"; R(x - 30, y - 62, 34, 10, "#2a2d36"); R(x + 10, y - 66, 20, 14, "#1a1a1f"); emoji("💥", x - 6, y - 80, 26); emoji("💨", x + 18, y - 90, 20, 0.7); R(x - 18, y - 56, 8, 4, "#c33"); }
+      else { R(x - 30, y - 92, 52, 40, "#101216"); R(x - 27, y - 89, 46, 32, `hsl(${(T0 * 60) % 360},70%,45%)`); R(x - 4, y - 52, 8, 4, "#333"); R(x + 28, y - 96, 24, 44, "#14141a"); R(x + 32, y - 90, 5, 32, `hsl(${(T0 * 90) % 360},95%,55%)`); R(x + 41, y - 90, 5, 32, `hsl(${(T0 * 90 + 120) % 360},95%,55%)`); R(x - 28, y - 57, 40, 5, "#14141a"); } break; }
+    case "gchair": R(x - 20, y - 70, 40, 14, "#c0392b"); rrect(x - 24, y - 112, 14, 56, 6, "#c0392b"); R(x - 16, y - 56, 36, 10, "#8c2a1e"); R(x - 4, y - 46, 8, 36, "#333"); R(x - 22, y - 10, 44, 6, "#333"); break;
+    case "router": R(x - 26, y - 82, 52, 5, "#7a5226"); R(x - 14, y - 94, 28, 12, "#14141a"); R(x - 10, y - 108, 2, 14, "#14141a"); R(x + 8, y - 108, 2, 14, "#14141a"); R(x - 8, y - 90, 3, 3, "#5dffa0"); R(x - 2, y - 90, 3, 3, "#5dffa0"); R(x + 4, y - 90, 3, 3, "#ffd93d"); break;
+    case "toolbox": R(x - 24, y - 26, 48, 26, "#c0392b"); R(x - 24, y - 30, 48, 6, "#8a2a20"); R(x - 8, y - 38, 16, 10, "#7a7a7a"); break;
+    case "bookcase": R(x - 40, y - 130, 80, 130, "#6a4524"); for (let s = 0; s < 4; s++) { R(x - 36, y - 126 + s * 32, 72, 28, "#3a2515"); let bx = x - 34; while (bx < x + 30) { const w = 6 + Math.random() * 0 + (((bx * 7) | 0) % 5); R(bx, y - 124 + s * 32, w, 24, ["#c0392b", "#2c7fb8", "#d4a017", "#27ae60", "#8e44ad"][((bx | 0) + s) % 5]); bx += w + 1; } } break;
+    case "armchair": rrect(x - 36, y - 56, 72, 54, 10, "#3e6a4a"); rrect(x - 30, y - 90, 60, 44, 10, "#4e8a5e"); R(x - 24, y - 40, 48, 24, "#6aa87a"); break;
+  }
+}
+function drawGuy(x, y, o) {   // feet at (x,y)
+  c.save(); c.translate(x, y); if (o.tilt) { c.translate(0, -30); c.rotate(o.tilt); c.translate(0, 30); } c.scale(o.face * o.s, o.s);
+  const sw = Math.sin(o.walk) * (o.moving ? 8 : 0), pants = o.pants, hood = o.hood;
+  R(-11, -34, 10, 34 + sw * 0.1, pants); R(2, -34, 10, 34 - sw * 0.1, pants); c.save(); c.translate(0, 0); R(-13 + sw * 0.5, -6, 14, 6, "#f2f2f2"); R(1 - sw * 0.5, -6, 14, 6, "#f2f2f2"); c.restore();
+  rrect(-17, -70, 34, 40, 8, hood); R(-6, -50, 12, 12, o.pocket || "#00000022"); const ar = o.arms || 0;
+  c.save(); c.translate(-17, -66); c.rotate(-0.3 + sw * 0.02 - ar); R(-5, 0, 8, 28, hood); R(-5, 26, 8, 7, o.skin); c.restore(); c.save(); c.translate(17, -66); c.rotate(0.3 - sw * 0.02 + ar); R(-3, 0, 8, 28, hood); R(-3, 26, 8, 7, o.skin); c.restore();
+  c.fillStyle = o.skinTint || o.skin; c.beginPath(); c.arc(0, -86, 16, 0, 7); c.fill();
+  if (o.hair) { c.fillStyle = o.hair; c.beginPath(); c.arc(0, -90, 17, Math.PI, 0); c.fill(); R(-17, -92, 34, 5, o.hair); }
+  if (o.cap) { c.fillStyle = o.cap; c.beginPath(); c.arc(0, -92, 17, Math.PI, 0); c.fill(); R(2, -94, 24, 6, o.cap); }
+  if (o.phones) { c.strokeStyle = "#16e0a0"; c.lineWidth = 4; c.beginPath(); c.arc(0, -88, 19, Math.PI * 1.05, Math.PI * 1.95); c.stroke(); R(-21, -90, 7, 14, "#16e0a0"); R(14, -90, 7, 14, "#16e0a0"); c.lineWidth = 1; }
+  const m = o.mood;
+  if (m === "angry") { R(2, -90, 6, 3, "#222"); R(-8, -90, 6, 3, "#222"); R(-1, -84, 4, 4, "#fff"); R(-9, -84, 4, 4, "#fff"); R(-4, -76, 12, 5, "#7a1010"); }
+  else if (m === "pain") { R(-8, -88, 6, 2, "#222"); R(2, -88, 6, 2, "#222"); R(-4, -77, 10, 7, "#5a1010"); }
+  else if (m === "cry") { R(-8, -86, 5, 3, "#222"); R(3, -86, 5, 3, "#222"); R(-9, -82, 3, 10, "#5ab4ff"); R(6, -82, 3, 10, "#5ab4ff"); R(-3, -74, 9, 3, "#222"); }
+  else if (m === "scared") { R(-9, -90, 7, 8, "#fff"); R(2, -90, 7, 8, "#fff"); R(-6, -87, 3, 4, "#222"); R(5, -87, 3, 4, "#222"); R(-3, -76, 8, 8, "#5a1010"); }
+  else if (m === "grin") { R(-8, -88, 4, 4, "#222"); R(3, -88, 4, 4, "#222"); R(-6, -79, 14, 3, "#fff"); R(-6, -80, 14, 1.5, "#222"); }
+  else { R(-8, -88, 4, 4, "#222"); R(3, -88, 4, 4, "#222"); R(-4, -77, 9, 2, "#6a3a2a"); }
+  c.restore();
+}
+function drawPlayer() {
+  const P = G.P; if (P.hidden) return; let x = P.x, y = fyOf(P.f), moving = (input.left || input.right) && !P.climb;
+  if (P.climb) { const t = P.climb.t; x = lerp(P.climb.x0, P.climb.x1, t); y = lerp(fyOf(P.climb.f0), fyOf(P.climb.f1), t); moving = true; }
+  const flash = P.hurt > 0 && Math.floor(P.hurt * 12) % 2; if (flash) c.globalAlpha = 0.4;
+  drawGuy(x, y, { face: P.face, s: 0.82, walk: P.walk, moving, hood: "#e8742a", pants: "#2f3a52", skin: "#e0b08c", cap: "#2c6cd8", mood: "grin" }); c.globalAlpha = 1;
+  if (P.carry) emoji(ITEMS[P.carry], x + P.face * 14, y - 68 * 0.82 - 6 + Math.sin(T0 * 5) * 2, 22);
+}
+function drawDillan() {
+  const N = G.N; let x = N.x, y = fyOf(N.f), moving = !N.acting && N.state !== "stunned" && N.state !== "catch";
+  if (N.climb) { x = lerp(N.climb.x0, N.climb.x1, N.climb.t); y = lerp(fyOf(N.climb.f0), fyOf(N.climb.f1), N.climb.t); moving = true; }
+  const fx = N.fx, act = N.acting ? L.routine[N.ri].act : null; let o = { face: N.face || 1, s: 1.0, walk: N.walk, moving, hood: "#232330", pants: "#2b3a5a", skin: "#e0b08c", hair: N.hairGreen ? "#2ee86a" : "#3a2616", phones: true, mood: N.state === "chase" ? "angry" : "calm", pocket: "#5a2d82" };
+  let yo = 0, extra = null;
+  if (N.state === "chase") { o.arms = 0.9; o.mood = "angry"; }
+  if (N.state === "catch") { o.arms = 1.2; o.mood = "angry"; yo = -Math.abs(Math.sin(T0 * 14)) * 6; }
+  if (fx) { fx.t += 1 / 60; const t = fx.t;
+    switch (fx.type) {
+      case "slip": o.tilt = -Math.min(1.5, t * 6) * N.face; yo = Math.min(0, -0) + 24 * Math.min(1, t * 5); o.mood = "pain"; o.moving = false; extra = "⭐"; break;
+      case "soak": o.mood = "pain"; o.hood = "#3a5a8a"; o.pants = "#2a3f66"; o.arms = 0.5 + Math.sin(t * 20) * 0.2; extra = "💦"; break;
+      case "jump": yo = -Math.abs(Math.sin(t * 9)) * 46; o.arms = 1.4; o.mood = "scared"; break;
+      case "stuck": o.arms = 1.1; o.mood = "pain"; o.tilt = Math.sin(t * 14) * 0.2; extra = "🩲"; break;
+      case "burn": o.skinTint = "#2a2220"; o.hair = "#1a1414"; o.mood = "pain"; o.arms = 1.0; extra = "💨"; break;
+      case "hot": o.skinTint = "#e0352a"; o.mood = "scared"; o.arms = 1.3; yo = -Math.abs(Math.sin(t * 12)) * 12; extra = "🔥"; break;
+      case "hair": o.mood = "scared"; o.arms = 1.0; extra = "💚"; break;
+      case "cry": o.mood = "cry"; o.arms = 0.6; o.tilt = Math.sin(t * 6) * 0.06; yo = 6; extra = "😭"; break;
+    } o.moving = false; }
+  else if (act) { const t = N.actT;
+    if (act === "shower") { o.moving = false; o.mood = "calm"; }
+    if (act === "sleep") { o.tilt = N.face * 1.4; o.moving = false; yo = 4; }
+    if (act === "game") { o.arms = 0.9 + Math.sin(t * 14) * 0.15; o.mood = Math.sin(t * 2) > 0.8 ? "angry" : "calm"; }
+    if (act === "cook" || act === "eat") o.arms = 0.7 + Math.sin(t * 5) * 0.2;
+    if (act === "tv" || act === "read") o.moving = false;
+    if (act === "router") o.arms = 0.6;
+  }
+  drawGuy(x, y + yo, o);
+  if (extra) { const a = G.N.fx ? G.N.fx.t : 0; emoji(extra, x + Math.sin(a * 6) * 22, y - 130 + (extra === "💨" ? -a * 12 : 0), 24); if (fx && fx.type === "slip") emoji("🍌", x + 40, y - 8, 22); }
+  if (act === "sleep" && !fx) emoji("💤", x + 26, y - 74 - Math.sin(T0 * 2) * 6, 22);
+  if (N.aware > 0.05 && N.state !== "chase" && N.state !== "stunned") { c.fillStyle = "#0008"; R(x - 22, y - 128, 44, 6, "#0008"); R(x - 22, y - 128, 44 * N.aware, 6, N.aware > 0.7 ? "#ff4d5d" : "#ffd93d"); emoji(N.aware > 0.5 ? "❗" : "❔", x, y - 142, 20); }
+  if (N.state === "chase") emoji("😡", x, y - 142, 22);
+  if (N.sayT > 0 && N.say) { c.font = "bold 13px system-ui"; const tw = c.measureText(N.say).width + 18; c.fillStyle = "#fff"; rrect(x - tw / 2, y - 184, tw, 26, 9, "#fff"); c.fillStyle = "#111"; c.textAlign = "center"; c.fillText(N.say, x, y - 166); R(x - 4, y - 158, 8, 8, "#fff"); }
+}
+function drawWorld() {
+  T0 = performance.now() / 1000;
+  drawHouse();
+  for (const [t, f, x] of L.props) drawProp(t, f, x);
+  // hide spots hint + armed traps + items
+  for (const [f, x] of L.hides) if (G.P.hidden && G.P.hidden[0] === f && G.P.hidden[1] === x) { const y = fyOf(f); R(x - 32, y - 118, 64, 118, "#5a3a16"); R(x - 28, y - 114, 56, 110, "#2a1a08"); emoji("👀", x, y - 84, 22); R(x - 34, y - 118, 5, 118, "#7a5226"); R(x + 29, y - 118, 5, 118, "#7a5226"); }
+  for (const h of Object.values(G.hot)) { const y = fyOf(h.f); if (h.item) { const wob = Math.sin(T0 * 4 + h.x) * 2, yy = h.kind === "floor" ? y - 8 : h.kind === "door" ? y - 128 : h.kind === "sit" ? y - 58 : y - 100; emoji(ITEMS[h.item], h.x, yy + wob, h.kind === "floor" ? 22 : 18, 0.92); }
+    else if (G.P.carry && h.acc.includes(G.P.carry) && !G.P.hidden) { const near = Math.abs(h.x - G.P.x) < 46 && h.f === G.P.f; c.strokeStyle = near ? "#ffd93d" : "#ffffff66"; c.setLineDash([5, 5]); c.lineWidth = 2; c.beginPath(); c.arc(h.x, y - (h.kind === "floor" ? 8 : 60), near ? 26 : 18, 0, 7); c.stroke(); c.setLineDash([]); c.lineWidth = 1; emoji(ITEMS[G.P.carry], h.x, y - (h.kind === "floor" ? 8 : 60), 16, 0.5); } }
+  for (const it of G.items) { const y = fyOf(it.f), bob = Math.sin(T0 * 3 + it.x) * 3; c.fillStyle = "#0003"; c.beginPath(); c.ellipse(it.x, y - 2, 12, 4, 0, 0, 7); c.fill(); emoji(ITEMS[it.item], it.x, y - 16 + bob, 26); if (!G.P.carry && !G.P.hidden && Math.abs(it.x - G.P.x) < 38 && it.f === G.P.f) { c.strokeStyle = "#ffd93d"; c.lineWidth = 2; c.beginPath(); c.arc(it.x, y - 16 + bob, 20, 0, 7); c.stroke(); c.lineWidth = 1; } }
+  drawDillan(); drawPlayer();
+  for (const p of G.parts) emoji(p.e, p.x, p.y, 18, clamp(p.life * 1.6, 0, 1));
+  for (const p of G.pop) { c.font = `900 ${Math.round(22 * p.big)}px system-ui`; c.textAlign = "center"; c.lineWidth = 4; c.strokeStyle = "#000a"; c.strokeText(p.txt, p.x, p.y); c.fillStyle = p.col; c.globalAlpha = clamp(p.t, 0, 1); c.fillText(p.txt, p.x, p.y); c.globalAlpha = 1; c.lineWidth = 1; }
+}
+function drawHUD() {
+  const u = Math.min(1.3, Math.max(0.8, VH / 420));
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  R(0, 0, VW, 44, "#0a1424dd");
+  c.textAlign = "left"; c.fillStyle = "#fff"; c.font = `bold ${13 * u}px system-ui`; c.fillText(`Ep ${curLevel}: ${L.name}`, 12, 18);
+  c.fillStyle = "#9fb3d4"; c.font = `${11 * u}px system-ui`; c.fillText(`📺 TV ratings  ·  goal ${Math.round(L.target)} pts`, 12, 36);
+  const bx = Math.min(VW * 0.34, 300), bw = Math.max(110, VW * 0.3), x0 = VW / 2 - bw / 2;
+  R(x0, 12, bw, 14, "#000a"); const pct = clamp(G.rating / 100, 0, 1); R(x0, 12, bw * pct, 14, pct > 0.99 ? "#5dffa0" : "#ffd93d"); c.fillStyle = "#fff"; c.font = `bold ${10 * u}px system-ui`; c.textAlign = "center"; c.fillText(`${Math.round(G.rating)}%`, VW / 2, 23);
+  c.fillStyle = "#9fb3d4"; c.font = `${11 * u}px system-ui`; c.fillText(`⏱ ${Math.max(0, Math.ceil(G.t))}s`, VW / 2, 40);
+  c.textAlign = "right"; c.font = `${16 * u}px system-ui`; c.fillStyle = "#fff"; c.fillText("❤️".repeat(Math.max(0, G.lives)) + "🖤".repeat(Math.max(0, 3 - G.lives)), VW - (isTouch ? 56 : 14), 20);
+  c.font = `${11 * u}px system-ui`; c.fillStyle = "#9fb3d4"; c.fillText(G.P.carry ? `Carrying: ${ITEMS[G.P.carry]} ${ITEMNAME[G.P.carry]}` : "Carrying: nothing", VW - (isTouch ? 56 : 14), 38);
+  // contextual hint
+  const msg = G.hintT > 0 && G.hint ? G.hint : G.ctx; if (msg && state === "playing") { c.font = `bold ${13 * u}px system-ui`; const tw = c.measureText(msg).width + 24; R(VW / 2 - tw / 2, 52, tw, 26 * u, "#000a"); c.fillStyle = "#fff"; c.textAlign = "center"; c.fillText(msg, VW / 2, 52 + 17 * u); }
+  if (G.P.hidden) { c.fillStyle = "#5dffa0"; c.font = `bold ${13 * u}px system-ui`; c.textAlign = "center"; c.fillText("Hiding... move or tap to come out", VW / 2, VH - 14); }
+  if (G.N.state === "chase") { const a = 0.18 + 0.12 * Math.sin(T0 * 12); c.fillStyle = `rgba(255,0,0,${a})`; c.fillRect(0, 44, VW, VH - 44); }
+}
+function draw() {
+  c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, VW, VH); c.fillStyle = "#5fb4f5"; c.fillRect(0, 0, VW, VH);
+  if (!L) return;
+  const worldH = TOP + L.floors * FH + GRD, availH = VH - 46; K = clamp(availH / worldH, 0.3, 1.6);
+  const viewW = VW / K, px = G.P.climb ? lerp(G.P.climb.x0, G.P.climb.x1, G.P.climb.t) : G.P.x;
+  // follow the player, but swing towards Dillan while a prank is going off (as long as you both stay on screen)
+  let want = px; if (G.N.state === "stunned" && Math.abs(G.N.x - px) < viewW * 0.8) want = lerp(px, G.N.x, 0.7);
+  camF = camF === null || state === "menu" ? want : camF + (want - camF) * 0.12;
+  camX = L.W + 120 <= viewW ? -(viewW - L.W) / 2 : clamp(camF - viewW / 2, -60, L.W + 60 - viewW);
+  c.setTransform(DPR * K, 0, 0, DPR * K, -camX * K * DPR, 46 * DPR + (availH - worldH * K) * DPR / 2);
+  drawWorld(); drawHUD();
+  // edge marker when Dillan is off screen
+  const ds = (G.N.x - camX) * K; if ((ds < 8 || ds > VW - 8) && state === "playing") { c.setTransform(DPR, 0, 0, DPR, 0, 0); const left = ds < 8; c.fillStyle = "#ff4d5dcc"; rrect(left ? 6 : VW - 96, 88, 90, 26, 13, "#ff4d5dcc"); c.fillStyle = "#fff"; c.font = "bold 12px system-ui"; c.textAlign = "center"; c.fillText((left ? "◀ " : "") + NAME() + (left ? "" : " ▶"), left ? 51 : VW - 51, 105); }
+}
+
+// ============================================================
+// input / ui
+// ============================================================
+function key(e, down) {
+  const k = e.code;
+  if (k === "ArrowLeft" || k === "KeyA") { input.left = down; } else if (k === "ArrowRight" || k === "KeyD") { input.right = down; }
+  else if (k === "ArrowUp" || k === "KeyW") { if (down && !input.up) input.eUp = true; input.up = down; } else if (k === "ArrowDown" || k === "KeyS") { if (down && !input.down) input.eDown = true; input.down = down; }
+  else if (k === "Space" || k === "KeyE") { if (down && !input.act) input.eAct = true; input.act = down; }
+  else if (down && (k === "Escape" || k === "KeyP") && state === "playing") pauseGame(); else if (down && (k === "Escape" || k === "KeyP") && state === "paused") resume(); else return;
+  e.preventDefault();
+}
+addEventListener("keydown", e => { if (state === "playing" || state === "paused") key(e, true); }); addEventListener("keyup", e => key(e, false));
+document.addEventListener("visibilitychange", () => { if (document.hidden && state === "playing") pauseGame(); });
+(function pad() {
+  const hold = (id, down, up) => { const el = $(id); el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); el.classList.add("down"); ac(); down(); e.preventDefault(); }); const u = () => { el.classList.remove("down"); up && up(); }; el.addEventListener("pointerup", u); el.addEventListener("pointercancel", u); };
+  hold("bL", () => input.left = true, () => input.left = false); hold("bR", () => input.right = true, () => input.right = false);
+  hold("bUp", () => { input.eUp = true; }); hold("bDn", () => { input.eDown = true; }); hold("bAct", () => { input.eAct = true; }); hold("bPause", pauseGame);
+})();
+function hideOverlays() { for (const id of ["menu", "pause", "win", "fail"]) $(id).classList.remove("show"); }
+function pauseGame() { if (state !== "playing") return; state = "paused"; input.left = input.right = false; $("pause").classList.add("show"); }
+function resume() { if (state !== "paused") return; state = "playing"; $("pause").classList.remove("show"); }
+function toMenu() { state = "menu"; hideOverlays(); $("pad").classList.remove("on"); menuLevel = clamp(curLevel, 1, PROG.max); renderMenu(); $("menu").classList.add("show"); }
+function renderMenu() {
+  const g = $("grid"); g.replaceChildren();
+  LEVELS.forEach((lv, i) => { const n = i + 1, b = document.createElement("button"); b.className = "b" + (n === menuLevel ? " on" : ""); b.disabled = n > PROG.max; const s = PROG.stars[n] || 0; b.innerHTML = `${n}<small>${s ? "★".repeat(s) : "&nbsp;"}</small><span style="font-size:11px;color:#9fb3d4">${lv.name}</span>`; b.onclick = () => { menuLevel = n; renderMenu(); }; g.append(b); });
+  const sb = $("soundBtns"); sb.replaceChildren(); for (const [v, l] of [[true, "On"], [false, "Off"]]) { const b = document.createElement("button"); b.className = "b" + (SET.sound === v ? " on" : ""); b.textContent = l; b.onclick = () => { SET.sound = v; saveSet(); renderMenu(); }; sb.append(b); }
+  $("title").innerHTML = `PRANK <span>${NAME().toUpperCase()}</span>`; document.title = `Prank ${NAME()}`;
+  $("helpTxt").innerHTML = (isTouch ? "<b>◀ ▶</b> walk · <b>▲</b> climb stairs · <b>▼</b> hide in a wardrobe / go down stairs · <b>ACT</b> pick up an item, then tap ACT again on a glowing spot to rig a trap." : "<b>← →</b> walk · <b>↑</b> up stairs · <b>↓</b> hide / down stairs · <b>Space</b> pick up / rig / drop.") +
+    ` Then wait for ${NAME()} to walk into it. Fill the TV ratings bar before time runs out. Don't let him see you!`;
+}
+$("nameIn").addEventListener("input", e => { SET.name = e.target.value; saveSet(); renderMenu(); });
+$("startBtn").onclick = () => { SET.name = $("nameIn").value; saveSet(); ac(); startLevel(menuLevel); };
+$("resumeBtn").onclick = resume; $("quitBtn").onclick = toMenu; $("winMenu").onclick = toMenu; $("failMenu").onclick = toMenu;
+$("restartBtn").onclick = () => startLevel(curLevel); $("retryBtn").onclick = () => startLevel(curLevel); $("nextBtn").onclick = () => startLevel(curLevel + 1);
+$("fsBtn").onclick = async () => { try { await document.documentElement.requestFullscreen(); if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("landscape"); } catch {} };
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G && state === "playing") update(dt); else if (G && (state === "won" || state === "failed")) { G.N.walk += dt; for (const p of G.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; } G.parts = G.parts.filter(p => p.life > 0); for (const p of G.pop) { p.t -= dt; p.y -= 24 * dt; } G.pop = G.pop.filter(p => p.t > 0); }
+  draw(); requestAnimationFrame(frame);
+}
+$("nameIn").value = NAME(); resize(); menuLevel = clamp(PROG.max, 1, LEVELS.length); renderMenu(); startLevel(1); state = "menu"; $("pad").classList.remove("on"); $("menu").classList.add("show");
+requestAnimationFrame(frame);
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

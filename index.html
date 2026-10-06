@@ -58,7 +58,7 @@ function render() {
   for (const b of filters.children) b.classList.toggle("on", b.textContent === active);
 }
 
-fetch("apps.json").then(r => r.json()).then(list => {
+fetch("apps.json?v=" + Date.now(), { cache: "no-store" }).then(r => r.json()).then(list => {
   apps = list;
   const cats = ["All", ...new Set(list.map(a => a.category))];
   if (cats.length > 2) filters.replaceChildren(...cats.map(c => {

@@ -10,6 +10,7 @@ apps/
   tower-defence/  Orbital Defence
   patient-zero/   Patient Zero (Plague Inc-style pandemic strategy)
   magic-sort/     Magic Sort (potion colour-sorting puzzle)
+  hardline/       Hardline (first-person wave shooter, raycast 3D engine)
 ```
 
 ## Adding an app

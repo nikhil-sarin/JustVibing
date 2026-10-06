@@ -19,5 +19,12 @@
     "description": "Potion-sorting puzzle: pour colours until every flask is one shade. Endless levels, hints, undo and fog levels.",
     "category": "Games",
     "path": "apps/magic-sort/"
+  },
+  {
+    "id": "hardline",
+    "name": "Hardline",
+    "description": "First-person wave shooter: 6 weapons, armoury between waves, touch or keyboard + mouse. Best in landscape.",
+    "category": "Games",
+    "path": "apps/hardline/"
   }
 ]

@@ -136,13 +136,16 @@ const COLS = 9, ROWS = 13;
 const MAPS = [
   { id: "serpent", name: "Serpent", gold: 120, lives: 20, difficulty: "Easy",
     desc: "A long winding lane. Plenty of room, good for learning.",
-    wp: [[-1,1],[7,1],[7,4],[1,4],[1,7],[7,7],[7,10],[1,10],[1,12],[8,12]] },
+    wp: [[-1,1],[7,1],[7,4],[1,4],[1,7],[7,7],[7,10],[1,10],[1,12],[8,12]],
+    entries: [{ wave: 10, wp: [[9,5],[1,5],[1,7],[7,7],[7,10],[1,10],[1,12],[8,12]] }, { wave: 20, wp: [[-1,9],[7,9],[7,10],[1,10],[1,12],[8,12]] }] },
   { id: "spiral", name: "Spiral", gold: 150, lives: 20, difficulty: "Medium",
     desc: "Enemies spiral inward to Earth at the centre. Very long route, towers in the middle reach everything.",
-    wp: [[-1,0],[8,0],[8,12],[0,12],[0,2],[6,2],[6,10],[2,10],[2,4],[4,4],[4,8]] },
+    wp: [[-1,0],[8,0],[8,12],[0,12],[0,2],[6,2],[6,10],[2,10],[2,4],[4,4],[4,8]],
+    entries: [{ wave: 10, wp: [[3,-1],[3,2],[6,2],[6,10],[2,10],[2,4],[4,4],[4,8]] }, { wave: 20, wp: [[5,13],[5,10],[2,10],[2,4],[4,4],[4,8]] }] },
   { id: "crossfire", name: "Crossfire", gold: 170, lives: 15, difficulty: "Hard",
     desc: "A short route that crosses itself. A tower at the junction hits every pass.",
-    wp: [[-1,6],[6,6],[6,1],[2,1],[2,11],[8,11]] },
+    wp: [[-1,6],[6,6],[6,1],[2,1],[2,11],[8,11]],
+    entries: [{ wave: 10, wp: [[9,8],[2,8],[2,11],[8,11]] }, { wave: 20, wp: [[4,-1],[4,1],[2,1],[2,11],[8,11]] }] },
 ];
 const DEFS = {
   pulse: { name: "Pulse", cost: 50,  range: 2.3, dmg: 9,  rate: 0.45, color: "#4de1ff", desc: "fast, cheap", air: true,
@@ -182,9 +185,9 @@ const ABILITIES = {
 const EARLY_BONUS = 8;
 // difficulty: scales enemy toughness/speed/numbers and squeezes the economy
 const DIFFS = {
-  normal: { label: "Normal", note: "the original",            hpBase: 1.17,  hp: 1,   spd: 1,    rew: 1,   gold: 1,    lives: 1,   size: 1,    bonus: 1,   armor: 0, elite: 0,    eliteFrom: 99 },
-  hard:   { label: "Hard",   note: "tougher, faster, leaner",  hpBase: 1.215, hp: 1.1,  spd: 1.1,  rew: 0.8,  gold: 0.9,  lives: 0.8,  size: 1.2,  bonus: 0.8,  armor: 2, elite: 0.12, eliteFrom: 6 },
-  insane: { label: "Insane", note: "good luck",                hpBase: 1.245, hp: 1.1,  spd: 1.14, rew: 0.65, gold: 0.85, lives: 0.7,  size: 1.25, bonus: 0.65, armor: 4, elite: 0.22, eliteFrom: 5 },
+  normal: { label: "Normal", note: "the original",            hpBase: 1.17,  hp: 1,   spd: 1,    rew: 1,   gold: 1,    lives: 1,   size: 1,    bonus: 1,   armor: 0, elite: 0,    eliteFrom: 99, entryShift: 0 },
+  hard:   { label: "Hard",   note: "tougher, faster, leaner",  hpBase: 1.215, hp: 1.1,  spd: 1.1,  rew: 0.8,  gold: 0.9,  lives: 0.8,  size: 1.2,  bonus: 0.8,  armor: 2, elite: 0.12, eliteFrom: 6, entryShift: 2 },
+  insane: { label: "Insane", note: "good luck",                hpBase: 1.245, hp: 1.1,  spd: 1.14, rew: 0.65, gold: 0.85, lives: 0.7,  size: 1.25, bonus: 0.65, armor: 4, elite: 0.22, eliteFrom: 5, entryShift: 4 },
 };
 let DIFFK = (() => { try { const v = JSON.parse(localStorage.getItem("od-diff")); return DIFFS[v] ? v : "hard"; } catch { return "hard"; } })();
 const DF = () => DIFFS[DIFFK];
@@ -193,6 +196,7 @@ const DF = () => DIFFS[DIFFK];
 const $ = id => document.getElementById(id);
 const cv = $("c"), ctx = cv.getContext("2d");
 const key = (c, r) => c + "," + r;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
@@ -201,43 +205,46 @@ const bestKey = m => "od-best-" + m.id + (DIFFK === "normal" ? "" : "-" + DIFFK)
 const bestFor = m => store.get(bestKey(m), m.id === "serpent" && DIFFK === "normal" ? store.get("od-best", 0) : 0);
 
 // ---------- map / path ----------
-let MAP, pts, segLen, cum, PATH_LEN, FLY_LEN, pathCells;
+let MAP, PATHS, pathCells;
+function buildPath(wp, start) {
+  const pts = wp.map(([c, r]) => ({ x: c + 0.5, y: r + 0.5 })), segLen = [], cum = [0];
+  for (let i = 1; i < pts.length; i++) { segLen.push(Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y)); cum.push(cum[i-1] + segLen[i-1]); }
+  return { wp, pts, segLen, cum, len: cum[cum.length - 1], fly: Math.hypot(pts[pts.length - 1].x - pts[0].x, pts[pts.length - 1].y - pts[0].y), start };
+}
+const entryWave = e => Math.max(4, e.wave - DF().entryShift);
 function setMap(m) {
   MAP = m;
-  pts = m.wp.map(([c, r]) => ({ x: c + 0.5, y: r + 0.5 }));
-  segLen = []; cum = [0];
-  for (let i = 1; i < pts.length; i++) {
-    segLen.push(Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y));
-    cum.push(cum[i-1] + segLen[i-1]);
-  }
-  PATH_LEN = cum[cum.length - 1];
-  FLY_LEN = Math.hypot(pts[pts.length - 1].x - pts[0].x, pts[pts.length - 1].y - pts[0].y);
-  pathCells = new Set();
-  for (let i = 1; i < m.wp.length; i++) {
-    const [c0, r0] = m.wp[i-1], [c1, r1] = m.wp[i];
+  PATHS = [buildPath(m.wp, 1), ...(m.entries || []).map(e => buildPath(e.wp, entryWave(e)))];
+  pathCells = new Set();                                  // every lane is unbuildable, including ones that open later
+  for (const P of PATHS) { P.cells = new Set(); for (let i = 1; i < P.wp.length; i++) {
+    const [c0, r0] = P.wp[i-1], [c1, r1] = P.wp[i];
     for (let c = Math.min(c0, c1); c <= Math.max(c0, c1); c++)
-      for (let r = Math.min(r0, r1); r <= Math.max(r0, r1); r++) pathCells.add(key(c, r));
-  }
+      for (let r = Math.min(r0, r1); r <= Math.max(r0, r1); r++) { pathCells.add(key(c, r)); P.cells.add(key(c, r)); }
+  } }
 }
-function posAt(d) {
-  d = Math.max(0, Math.min(PATH_LEN, d));
+const lanesAt = n => PATHS.filter(P => P.start <= n).length;
+const activeLanes = n => PATHS.map((P, i) => i).filter(i => PATHS[i].start <= n);
+function posOn(P, d) {
+  d = Math.max(0, Math.min(P.len, d));
   let i = 1;
-  while (i < cum.length - 1 && cum[i] < d) i++;
-  const t = (d - cum[i-1]) / segLen[i-1];
-  return { x: pts[i-1].x + (pts[i].x - pts[i-1].x) * t, y: pts[i-1].y + (pts[i].y - pts[i-1].y) * t };
+  while (i < P.cum.length - 1 && P.cum[i] < d) i++;
+  const t = (d - P.cum[i-1]) / P.segLen[i-1];
+  return { x: P.pts[i-1].x + (P.pts[i].x - P.pts[i-1].x) * t, y: P.pts[i-1].y + (P.pts[i].y - P.pts[i-1].y) * t };
 }
-// enemies on the ground follow the lane; flyers go straight from the spawn to Earth
+// enemies on the ground follow their lane; flyers go straight from their entry point to Earth
 function epos(e) {
-  if (!e.fly) return posAt(e.d);
-  const t = Math.max(0, Math.min(1, e.d / FLY_LEN)), a = pts[0], b = pts[pts.length - 1];
+  const P = PATHS[e.path || 0];
+  if (!e.fly) return posOn(P, e.d);
+  const t = Math.max(0, Math.min(1, e.d / P.fly)), a = P.pts[0], b = P.pts[P.pts.length - 1];
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
-const totalLen = e => e.fly ? FLY_LEN : PATH_LEN;
+const totalLen = e => { const P = PATHS[e.path || 0]; return e.fly ? P.fly : P.len; };
 const progress = e => e.d / totalLen(e);
 
 // ---------- state ----------
 let G;
 function newGame() {
+  PATHS.forEach((P, i) => { if (i) P.start = entryWave(MAP.entries[i - 1]); });
   G = { lives: Math.max(6, Math.round(MAP.lives * DF().lives)), gold: Math.round(MAP.gold * DF().gold), wave: 0, time: 0, towers: [], enemies: [], shots: [], fx: [], queue: [],
         waveLive: false, over: false, speed: 1, selType: null, sel: null, arm: null, best: bestFor(MAP),
         cd: { strike: 0, freeze: 0 } };
@@ -275,7 +282,7 @@ function waveCounts(n) {
   if (n >= 5) c.dwarf = Math.floor(n / 2);
   if (n >= 6) c.splitter = Math.floor((n - 3) / 2);
   if (n >= 8) c.flyer = Math.floor(n / 2) - 1;
-  const sz = DF().size; if (sz !== 1) for (const k in c) c[k] = Math.round(c[k] * sz);
+  const sz = DF().size * (1 + 0.18 * (lanesAt(n) - 1)); if (sz !== 1) for (const k in c) c[k] = Math.round(c[k] * sz);   // more entries, bigger waves
   if (n % 5 === 0) c.boss = Math.floor(n / 5) + (DIFFK === "insane" && n >= 10 ? 1 : 0);
   return c;
 }
@@ -286,25 +293,26 @@ function buildWave(n) {
   return { list, hpMul, armor: 4 + n * 0.5 + d.armor };
 }
 function previewText(n) {
-  return Object.entries(waveCounts(n)).map(([k, v]) => `${KINDS[k].icon}${v}`).join(" ");
+  return Object.entries(waveCounts(n)).map(([k, v]) => `${KINDS[k].icon}${v}`).join(" ") + (PATHS.some((P, i) => i && P.start === n) ? " · 🚨NEW LANE" : "");
 }
 function sendWave() {
   if (G.over) return;
   const eb = Math.round(EARLY_BONUS * DF().bonus); if (G.waveLive) { G.gold += eb; toast(`Early send +${eb} ⚡`); }
   G.wave++;
-  const { list, hpMul, armor } = buildWave(G.wave);
+  const { list, hpMul, armor } = buildWave(G.wave), lanes = activeLanes(G.wave);
+  if (PATHS.some((P, i) => i && P.start === G.wave)) { toast("🚨 NEW ENTRY POINT OPENS!"); for (const i of lanes) if (i && PATHS[i].start === G.wave) { const p = PATHS[i].pts[0]; G.fx.push({ x: clamp(p.x, 0.5, COLS - 0.5), y: clamp(p.y, 0.5, ROWS - 0.5), ring: 1.6, life: 1.2, max: 1.2, c: "#ff5d7a" }); } }
   let at = G.queue.length ? G.queue[G.queue.length - 1].at + 2 : G.time + 0.3;
-  for (const it of list) { at += it.gap; G.queue.push({ at, kind: it.kind, hpMul, armor, elite: it.elite }); }
+  for (const it of list) { at += it.gap; G.queue.push({ at, kind: it.kind, hpMul, armor, elite: it.elite, path: lanes[Math.random() * lanes.length | 0] }); }
   G.waveLive = true;
   refreshUI();
 }
-function makeEnemy(kind, hpMul, armor, d, elite) {
+function makeEnemy(kind, hpMul, armor, d, elite, path) {
   const k = KINDS[kind], hp = k.hp * hpMul * (elite ? 1.8 : 1);
   const nv = kind === "splitter" ? 6 : 9;
   const verts = Array.from({ length: nv }, (_, i) => ({ a: i / nv * 6.283, r: 0.75 + Math.random() * (kind === "splitter" ? 0.15 : 0.4) }));
-  return { kind, d, hp, max: hp, hpMul, elite: !!elite, spd: k.speed * DF().spd * (elite ? 1.15 : 1), armor: k.armor ? armor : 0, fly: !!k.fly, slowT: 0, slowF: 1, verts, rot: Math.random() * 6, dead: false };
+  return { kind, d, path: path || 0, hp, max: hp, hpMul, elite: !!elite, spd: k.speed * DF().spd * (elite ? 1.15 : 1), armor: k.armor ? armor : 0, fly: !!k.fly, slowT: 0, slowF: 1, verts, rot: Math.random() * 6, dead: false };
 }
-function spawn(q) { G.enemies.push(makeEnemy(q.kind, q.hpMul, q.armor, 0, q.elite)); }
+function spawn(q) { G.enemies.push(makeEnemy(q.kind, q.hpMul, q.armor, 0, q.elite, q.path)); }
 
 function damage(e, dmg, pierce) {
   if (e.dead) return;
@@ -314,7 +322,7 @@ function damage(e, dmg, pierce) {
     G.gold += Math.max(1, Math.round(KINDS[e.kind].reward * DF().rew * (e.elite ? 2 : 1)));
     const p = epos(e);
     for (let i = 0; i < 8; i++) G.fx.push({ x: p.x, y: p.y, vx: (Math.random() - .5) * 3, vy: (Math.random() - .5) * 3, life: .5, max: .5, c: KINDS[e.kind].color });
-    if (KINDS[e.kind].split) for (let i = 0; i < 2; i++) G.enemies.push(makeEnemy("mini", e.hpMul, 0, Math.max(0, e.d - 0.25 * i), false));
+    if (KINDS[e.kind].split) for (let i = 0; i < 2; i++) G.enemies.push(makeEnemy("mini", e.hpMul, 0, Math.max(0, e.d - 0.25 * i), false, e.path));
     refreshUI();
   }
 }
@@ -436,7 +444,7 @@ function step(dt) {
     const bonus = Math.round((10 + G.wave * 3) * DF().bonus);
     G.gold += bonus;
     if (G.wave > G.best) { G.best = G.wave; store.set(bestKey(MAP), G.best); }
-    toast(`Wave ${G.wave} cleared  +${bonus} ⚡`);
+    toast(`Wave ${G.wave} cleared  +${bonus} ⚡` + (PATHS.some((P, i) => i && P.start === G.wave + 1) ? "  ·  🚨 new lane next wave!" : ""));
     refreshUI();
   }
 }
@@ -588,7 +596,7 @@ cv.addEventListener("pointerdown", ev => {
       G.towers.push({ c, r, type: G.selType, level: 1, branch: null, mode: d.mode || "first", cd: 0, angle: -1.57, spent: d.cost, flash: 0 });
       if (G.gold < d.cost) G.selType = null;
     } else toast("Not enough ⚡");
-  } else { G.sel = null; if (pathCells.has(key(c, r)) && G.selType) toast("Can't build on the flight path"); }
+  } else { G.sel = null; if (pathCells.has(key(c, r)) && G.selType) { const k = key(c, r), fut = PATHS.find(P => P.start > G.wave && P.cells.has(k) && !PATHS[0].cells.has(k)); toast(fut ? `Reserved: a new entry opens on wave ${fut.start}` : "Can't build on the flight path"); } }
   refreshUI();
 });
 
@@ -597,6 +605,7 @@ function drawPreview(canvas, m) {
   const s = 8, x = canvas.getContext("2d");
   canvas.width = COLS * s; canvas.height = ROWS * s;
   x.lineJoin = "round"; x.lineCap = "round";
+  for (const e of (m.entries || [])) { x.beginPath(); e.wp.forEach(([c, r], i) => { const px = (c + .5) * s, py = (r + .5) * s; i ? x.lineTo(px, py) : x.moveTo(px, py); }); x.strokeStyle = "#6a2a44"; x.lineWidth = s * .45; x.stroke(); }
   x.beginPath(); m.wp.forEach(([c, r], i) => { const px = (c + .5) * s, py = (r + .5) * s; i ? x.lineTo(px, py) : x.moveTo(px, py); });
   x.strokeStyle = "#2a3a7a"; x.lineWidth = s * .7; x.stroke();
   const [ec, er] = m.wp[m.wp.length - 1];
@@ -669,7 +678,7 @@ function drawTower(t) {
 function drawEnemy(e) {
   const k = KINDS[e.kind], p = epos(e);
   if (e.kind === "comet") {
-    const q = posAt(e.d - 0.7), tg = ctx.createLinearGradient(p.x, p.y, q.x, q.y);
+    const q = posOn(PATHS[e.path || 0], e.d - 0.7), tg = ctx.createLinearGradient(p.x, p.y, q.x, q.y);
     tg.addColorStop(0, k.color); tg.addColorStop(1, "#8fe9ff00");
     ctx.strokeStyle = tg; ctx.lineWidth = k.r * 1.4; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
     ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(p.x, p.y, k.r, 0, 6.283); ctx.fill();
@@ -703,10 +712,25 @@ function draw() {
   ctx.globalAlpha = 1;
 
   ctx.lineJoin = "round"; ctx.lineCap = "round";
-  ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-  ctx.strokeStyle = "#141c3d"; ctx.lineWidth = 0.86; ctx.stroke();
-  ctx.strokeStyle = "#1d2858"; ctx.lineWidth = 0.7; ctx.stroke();
-  ctx.setLineDash([0.12, 0.3]); ctx.strokeStyle = "#3a4a96"; ctx.lineWidth = 0.04; ctx.stroke(); ctx.setLineDash([]);
+  PATHS.forEach((P, li) => {
+    const open = P.start <= G.wave, soon = !open && P.start === G.wave + 1;
+    ctx.beginPath(); P.pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    if (open) {
+      ctx.strokeStyle = "#141c3d"; ctx.lineWidth = 0.86; ctx.stroke();
+      ctx.strokeStyle = li ? "#2a2250" : "#1d2858"; ctx.lineWidth = 0.7; ctx.stroke();
+      ctx.setLineDash([0.12, 0.3]); ctx.strokeStyle = li ? "#7a4aa0" : "#3a4a96"; ctx.lineWidth = 0.04; ctx.stroke(); ctx.setLineDash([]);
+    } else {            // a lane that opens later: shown as a dim warning so you don't build on it and can plan ahead
+      const pulse = soon ? 0.55 + 0.35 * Math.sin(G.time * 6) : 0.4;
+      ctx.globalAlpha = pulse; ctx.strokeStyle = "#2a1020"; ctx.lineWidth = 0.8; ctx.stroke(); ctx.strokeStyle = "#5a1d34"; ctx.lineWidth = 0.62; ctx.stroke();
+      ctx.setLineDash([0.14, 0.22]); ctx.strokeStyle = "#ff5d7a"; ctx.lineWidth = 0.05; ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+    // entry marker at the first point that is on the board
+    const ei = P.pts.findIndex(p => p.x > 0 && p.x < COLS && p.y > 0 && p.y < ROWS), a0 = P.pts[Math.max(0, ei - 1)], b0 = P.pts[ei], dx = b0.x - a0.x, dy = b0.y - a0.y, dl = Math.hypot(dx, dy) || 1;
+    const ex = clamp(a0.x, 0.3, COLS - 0.3), ey = clamp(a0.y, 0.3, ROWS - 0.3), ux = dx / dl, uy = dy / dl, pl = 1 + 0.15 * Math.sin(G.time * 5);
+    ctx.save(); ctx.translate(ex + ux * 0.25, ey + uy * 0.25); ctx.rotate(Math.atan2(uy, ux)); ctx.globalAlpha = open ? 0.95 : 0.8;
+    ctx.fillStyle = open ? "#ff5d7a" : "#ff5d7a99"; ctx.beginPath(); ctx.moveTo(0.3 * pl, 0); ctx.lineTo(-0.15, -0.26 * pl); ctx.lineTo(-0.15, 0.26 * pl); ctx.closePath(); ctx.fill(); ctx.restore(); ctx.globalAlpha = 1;
+    if (!open) { ctx.font = "bold 0.3px system-ui"; ctx.textAlign = "center"; ctx.fillStyle = soon ? "#ffd0d8" : "#ff9db0"; ctx.fillText(`⚠ wave ${P.start}`, clamp(ex, 0.9, COLS - 0.9), clamp(ey + (ey < 1 ? 0.75 : -0.45), 0.35, ROWS - 0.2)); }
+  });
 
   if (G.selType) {
     ctx.fillStyle = "#ffffff10";
@@ -714,7 +738,7 @@ function draw() {
       if (!pathCells.has(key(c, r)) && !G.towers.some(t => t.c === c && t.r === r)) ctx.fillRect(c + 0.06, r + 0.06, 0.88, 0.88);
   }
 
-  const ep = pts[pts.length - 1];
+  const ep = PATHS[0].pts[PATHS[0].pts.length - 1];
   const g = ctx.createRadialGradient(ep.x - .15, ep.y - .15, .05, ep.x, ep.y, .5);
   g.addColorStop(0, "#6fd0ff"); g.addColorStop(.6, "#2a78c8"); g.addColorStop(1, "#0b2c63");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ep.x, ep.y, .46, 0, 6.283); ctx.fill();

@@ -23,7 +23,8 @@
   #bL { left: max(14px, env(safe-area-inset-left)); bottom: 18px; width: 84px; height: 84px; font-size: 34px; } #bR { left: calc(max(14px, env(safe-area-inset-left)) + 98px); bottom: 18px; width: 84px; height: 84px; font-size: 34px; }
   #bAct { right: max(18px, env(safe-area-inset-right)); bottom: 18px; width: 100px; height: 100px; font-size: 17px; background: #ffd93d33; border-color: #ffd93dcc; }
   #bUp { right: 128px; bottom: 104px; width: 64px; height: 64px; font-size: 24px; } #bDn { right: 128px; bottom: 26px; width: 64px; height: 64px; font-size: 24px; }
-  #bPause { right: 12px; top: 10px; width: 38px; height: 38px; font-size: 15px; opacity: .8; }
+  #bPause { right: 12px; top: 10px; width: 38px; height: 38px; font-size: 15px; opacity: .8; } #bList { right: 58px; top: 10px; width: 38px; height: 38px; font-size: 15px; opacity: .85; }
+  #listBody small { color: var(--dim); }
   .overlay { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; background: #0d1626ee; padding: 14px; overflow: auto; touch-action: pan-y; }
   .overlay.show { display: flex; }
   .card { width: 100%; max-width: 560px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; max-height: 100%; overflow: auto; }
@@ -50,7 +51,7 @@
 <div id="pad">
   <div id="bL" class="btn">◀</div><div id="bR" class="btn">▶</div>
   <div id="bUp" class="btn">▲</div><div id="bDn" class="btn">▼</div><div id="bAct" class="btn">ACT</div>
-  <div id="bPause" class="btn">⏸</div>
+  <div id="bList" class="btn">📋</div><div id="bPause" class="btn">⏸</div>
 </div>
 
 <div id="menu" class="overlay show"><div class="card">
@@ -67,6 +68,8 @@
 
 <div id="pause" class="overlay"><div class="card"><h1>PAUSED</h1>
   <button class="b go" id="resumeBtn">RESUME</button><button class="b" id="restartBtn" style="margin-top:8px;width:100%">Restart episode</button><button class="b" id="quitBtn" style="margin-top:8px;width:100%">Quit to menu</button></div></div>
+
+<div id="list" class="overlay"><div class="card"><h1>PRANK LIST</h1><p class="sub" id="listSub"></p><div id="listBody"></div><button class="b go" id="listClose">BACK TO THE GAME</button></div></div>
 
 <div id="win" class="overlay"><div class="card">
   <h1 style="color:var(--green)">EPISODE COMPLETE!</h1><div class="stars" id="stars"></div><div class="quip" id="quip"></div><div id="winStats"></div>
@@ -104,7 +107,7 @@ const PRANK = {   // what each item does when it goes off
   hammer:   { pts: 50, anim: "cry", stun: 4.2, text: "SMASH!", snd: "smash", quip: "NOOOO! MY 4090!!!" },
 };
 
-// level: rooms [floor, x0, x1, name, theme]; props [type, floor, x]; hot = hotspots; items [item, floor, x]; hides [floor, x]; routine = Dillan's day
+// level: rooms [floor, x0, x1, name, theme]; props [type, floor, x]; hot = hotspots; items [item, floor, x]; hides [floor, x, type]; routine = Dillan's day
 const LEVELS = [
   { name: "The Flat", floors: 1, W: 1200, target: 60, time: 150, vig: 1,
     rooms: [[0, 0, 420, "Lounge", "lounge"], [0, 420, 800, "Kitchen", "kitchen"], [0, 800, 1200, "Bathroom", "bath"]], stairs: [],
@@ -113,7 +116,7 @@ const LEVELS = [
       { id: "trap1", f: 0, x: 650, kind: "floor", acc: ["banana", "marbles", "rope"], name: "kitchen floor" }, { id: "door1", f: 0, x: 800, kind: "door", acc: ["bucket"], name: "bathroom door" },
       { id: "shower", f: 0, x: 1110, kind: "use", acc: ["hairdye", "spider"], name: "shower" }],
     items: [["whoopee", 0, 90], ["glue", 0, 380], ["banana", 0, 470], ["pepper", 0, 770], ["bucket", 0, 930], ["hairdye", 0, 1030]],
-    hides: [[0, 30], [0, 1175]],
+    hides: [[0, 30, "wardrobe"], [0, 210, "behindsofa"], [0, 640, "undertable"], [0, 945, "bin"], [0, 1175, "basket"]],
     routine: [{ f: 0, x: 210, act: "tv", t: 9, hot: ["sofa"] }, { f: 0, x: 520, act: "cook", t: 8, hot: ["pot"] }, { f: 0, x: 620, act: "eat", t: 6, hot: [] }, { f: 0, x: 1110, act: "shower", t: 9, hot: ["shower"] }], ri0: 3, start: [0, 140] },
 
   { name: "The Maisonette", floors: 2, W: 1100, target: 85, time: 200, vig: 1.1,
@@ -125,7 +128,7 @@ const LEVELS = [
       { id: "trapC", f: 1, x: 300, kind: "floor", acc: ["banana", "marbles", "rope", "mousetrap"], name: "bedroom floor" }, { id: "trapD", f: 1, x: 650, kind: "floor", acc: ["banana", "marbles", "rope"], name: "landing" },
       { id: "shower", f: 1, x: 1040, kind: "use", acc: ["hairdye", "spider"], name: "shower" }],
     items: [["whoopee", 0, 80], ["firework", 0, 380], ["banana", 0, 600], ["pepper", 0, 980], ["marbles", 0, 880], ["glue", 0, 330], ["bucket", 1, 700], ["hairdye", 1, 900], ["mousetrap", 1, 250], ["spider", 1, 120]],
-    hides: [[0, 30], [1, 40], [1, 1075]],
+    hides: [[0, 30, "wardrobe"], [0, 260, "behindsofa"], [0, 810, "undertable"], [1, 40, "wardrobe"], [1, 150, "underbed"], [1, 400, "undertable"], [1, 840, "bin"], [1, 1075, "basket"]],
     routine: [{ f: 0, x: 260, act: "tv", t: 9, hot: ["sofa"] }, { f: 0, x: 660, act: "cook", t: 8, hot: ["pot"] }, { f: 0, x: 860, act: "eat", t: 6, hot: [] }, { f: 1, x: 1040, act: "shower", t: 9, hot: ["shower"] }, { f: 1, x: 150, act: "sleep", t: 10, hot: ["bed"] }], ri0: 4, start: [0, 430] },
 
   { name: "The Gamer Den", floors: 2, W: 1300, target: 110, time: 240, vig: 1.2,
@@ -137,7 +140,7 @@ const LEVELS = [
       { id: "router", f: 1, x: 100, kind: "use", acc: ["scissors"], name: "router" }, { id: "pc", f: 1, x: 260, kind: "use", acc: ["spider", "hammer"], name: "gaming PC" }, { id: "chair", f: 1, x: 335, kind: "sit", acc: ["glue", "whoopee", "firework"], name: "gaming chair" },
       { id: "door", f: 1, x: 650, kind: "door", acc: ["bucket"], name: "bathroom door" }, { id: "trapB", f: 1, x: 800, kind: "floor", acc: ["banana", "marbles", "rope"], name: "bathroom floor" }, { id: "shower", f: 1, x: 1220, kind: "use", acc: ["hairdye", "spider"], name: "shower" }],
     items: [["banana", 0, 40], ["scissors", 0, 190], ["pepper", 0, 400], ["whoopee", 0, 560], ["glue", 0, 770], ["hammer", 0, 1210], ["firework", 0, 1270], ["rope", 1, 20], ["marbles", 1, 540], ["spider", 1, 780], ["bucket", 1, 930], ["hairdye", 1, 1030]],
-    hides: [[0, 1100], [1, 620], [1, 1275]],
+    hides: [[0, 250, "undertable"], [0, 700, "behindsofa"], [0, 1100, "wardrobe"], [0, 1250, "bin"], [1, 210, "undertable"], [1, 620, "wardrobe"], [1, 920, "bin"], [1, 1275, "basket"]],
     routine: [{ f: 0, x: 700, act: "tv", t: 8, hot: ["sofa"] }, { f: 0, x: 110, act: "cook", t: 7, hot: ["pot"] }, { f: 1, x: 100, act: "router", t: 5, hot: ["router"] }, { f: 1, x: 335, act: "game", t: 14, hot: ["chair", "pc"] }, { f: 1, x: 1220, act: "shower", t: 9, hot: ["shower"] }], ri0: 4, start: [0, 600] },
 
   { name: "The Mansion", floors: 3, W: 1400, target: 150, time: 320, vig: 1.35,
@@ -153,10 +156,21 @@ const LEVELS = [
       { id: "armchair", f: 2, x: 300, kind: "sit", acc: ["glue", "whoopee", "firework"], name: "armchair" }, { id: "pc2", f: 2, x: 800, kind: "use", acc: ["spider", "hammer"], name: "streaming PC" },
       { id: "trapS", f: 2, x: 500, kind: "floor", acc: ["banana", "marbles", "rope"], name: "study floor" }],
     items: [["banana", 0, 50], ["pepper", 0, 380], ["whoopee", 0, 560], ["glue", 0, 640], ["marbles", 0, 1040], ["mousetrap", 0, 1330], ["bucket", 1, 560], ["hairdye", 1, 760], ["scissors", 1, 300], ["firework", 1, 700], ["spider", 1, 1030], ["rope", 1, 1250], ["hammer", 2, 40], ["banana", 2, 640], ["whoopee", 2, 1000]],
-    hides: [[0, 30], [1, 40], [1, 920], [2, 1370]],
+    hides: [[0, 30, "wardrobe"], [0, 370, "crate"], [0, 700, "undertable"], [0, 1250, "behindsofa"], [1, 40, "wardrobe"], [1, 150, "underbed"], [1, 760, "bin"], [1, 920, "basket"], [2, 300, "behindarm"], [2, 520, "undertable"], [2, 1260, "behindsofa"], [2, 1370, "wardrobe"]],
     routine: [{ f: 0, x: 110, act: "cook", t: 7, hot: ["pot"] }, { f: 0, x: 690, act: "eat", t: 7, hot: ["dchair"] }, { f: 0, x: 1250, act: "tv", t: 8, hot: ["sofa"] }, { f: 1, x: 1100, act: "game", t: 12, hot: ["pc1"] }, { f: 1, x: 1340, act: "router", t: 4, hot: ["router"] },
       { f: 1, x: 880, act: "shower", t: 8, hot: ["shower"] }, { f: 1, x: 150, act: "sleep", t: 8, hot: ["bed"] }, { f: 2, x: 300, act: "read", t: 8, hot: ["armchair"] }, { f: 2, x: 800, act: "game", t: 12, hot: ["pc2"] }], ri0: 6, start: [0, 560] },
 ];
+
+// extra props for the new hiding places
+LEVELS[0].props.push(["bin", 0, 945]);
+LEVELS[1].props.push(["bin", 1, 840]);
+LEVELS[2].props.push(["bin", 0, 1250], ["bin", 1, 920]);
+LEVELS[3].props.push(["crate", 0, 370], ["bin", 1, 760]);
+const HIDE_NAME = { wardrobe: "wardrobe", basket: "laundry basket", bin: "bin", crate: "crate", underbed: "under the bed", undertable: "under the table", behindsofa: "behind the sofa", behindarm: "behind the armchair" };
+const HIDE_RISK = { wardrobe: 0.5, basket: 0.8, bin: 1.2, crate: 0.9, underbed: 0.7, undertable: 1.3, behindsofa: 0.9, behindarm: 0.9 };   // chance Dillan finds you when he searches
+const ACT = { tv: ["📺", "watching TV"], cook: ["🍳", "cooking"], eat: ["🍽️", "eating"], shower: ["🚿", "showering"], sleep: ["😴", "sleeping"], game: ["🎮", "gaming"], router: ["📶", "checking the router"], read: ["📖", "reading"] };
+const TIP = { floor: "he walks over this", door: "he walks through here", sit: "he sits here", use: "he uses this" };
+const FLOORNAME = ["Ground floor", "1st floor", "2nd floor"];
 
 // ============================================================
 // helpers / audio
@@ -244,6 +258,7 @@ function updatePlayer(dt) {
   if (input.eAct) doAct();
   // pick up hint text
   const near = nearItem(P), hot = hotNear(P);
+  updateObjective();
   G.ctx = P.carry ? (hot && !hot.item && hot.acc.includes(P.carry) ? `ACT: set ${ITEMNAME[P.carry]} on the ${hot.name}` : near ? `ACT: swap for ${ITEMNAME[near.item]}` : `ACT: drop ${ITEMNAME[P.carry]}`) : (near ? `ACT: pick up ${ITEMNAME[near.item]}` : "");
 }
 const nearItem = P => G.items.filter(i => i.f === P.f && Math.abs(i.x - P.x) < 38).sort((a, b) => Math.abs(a.x - P.x) - Math.abs(b.x - P.x))[0] || null;
@@ -259,6 +274,29 @@ function doAct() {
   }
   if (near) { P.carry = near.item; G.items.splice(G.items.indexOf(near), 1); SND.pick(); return; }
   const armed = hot.find(h => h.item); if (armed) { G.items.push({ item: armed.item, f: armed.f, x: armed.x, hx: armed.x, hf: armed.f }); armed.item = null; SND.pick(); }   // un-set a trap
+}
+
+// ---------- planning info for the HUD ----------
+const WALKSPEED = 82;
+function etaTo(f, x, tf, tx) {   // seconds for Dillan to walk from (f,x) to (tf,tx)
+  let d = 0, t = 0; while (f !== tf) { const dir = Math.sign(tf - f), s = stairBetween(f, f + dir); if (!s) break; const { xb, xt } = stairFeet(s), foot = dir > 0 ? xb : xt; d += Math.abs(x - foot); x = dir > 0 ? xt : xb; t += 0.9; f += dir; } d += Math.abs(x - tx); return d / WALKSPEED + t;
+}
+function dillanPlan() {   // what he is doing now, and what he does next
+  const N = G.N, n = L.routine.length, cur = L.routine[N.ri], nxt = L.routine[(N.ri + 1) % n], me = N.climb ? { f: N.climb.f1, x: N.climb.x1 } : N;
+  const roomName = (f, x) => { const r = L.rooms[roomAt(f, x)]; return r ? r[3] : ""; };
+  let now, next, dest, eta = 0;
+  if (N.state === "chase") { now = ["😡", "Chasing you!"]; next = ["🥊", "Catching you"]; dest = null; }
+  else if (N.state === "catch") { now = ["🥊", "Got you!"]; next = ["🔁", "Back to his routine"]; dest = null; }
+  else if (N.state === "stunned") { now = ["😵", "Dazed (prank hit!)"]; next = ["🔍", "Search for the culprit"]; dest = cur; eta = 0; }
+  else if (N.state === "search") { now = ["🔍", "Searching for the culprit"]; const a = ACT[cur.act] || ["❓", cur.act]; next = [a[0], `Back to ${a[1]} (${roomName(cur.f, cur.x)})`]; dest = cur; eta = N.search + etaTo(me.f, me.x, cur.f, cur.x); }
+  else if (N.acting) { const a = ACT[cur.act] || ["❓", cur.act]; now = [a[0], `${a[1][0].toUpperCase() + a[1].slice(1)} (${Math.max(0, Math.ceil(cur.t - N.actT))}s left)`]; const b = ACT[nxt.act] || ["❓", nxt.act]; dest = nxt; eta = Math.max(0, cur.t - N.actT) + etaTo(cur.f, cur.x, nxt.f, nxt.x); next = [b[0], `${b[1][0].toUpperCase() + b[1].slice(1)} (${roomName(nxt.f, nxt.x)}, ${FLOORNAME[nxt.f].toLowerCase()})`]; }
+  else { const a = ACT[cur.act] || ["❓", cur.act]; now = ["🚶", `Walking to ${roomName(cur.f, cur.x)}`]; dest = cur; eta = etaTo(me.f, me.x, cur.f, cur.x); next = [a[0], `${a[1][0].toUpperCase() + a[1].slice(1)} (${FLOORNAME[cur.f].toLowerCase()})`]; }
+  return { now, next, dest, eta, stops: L.routine.map((s, i) => ({ s, i })) };
+}
+function updateObjective() {
+  const P = G.P; const free = Object.values(G.hot).filter(h => !h.item);
+  if (P.carry) { const ok = free.filter(h => h.acc.includes(P.carry)); G.obj = ok.length ? `🎯 ${ITEMS[P.carry]} goes on: ${ok.slice(0, 3).map(h => h.name).join(" · ")}` : `🎯 Nowhere free for ${ITEMNAME[P.carry]} - drop it or swap`; }
+  else { const rigged = Object.values(G.hot).filter(h => h.item).length; G.obj = free.length ? `🎯 Grab an item${rigged ? ` (${rigged} trap${rigged > 1 ? "s" : ""} rigged)` : ""}, then rig it on a glowing spot` : "🎯 Every spot is rigged - hide and watch!"; }
 }
 
 // ---------- Dillan ----------
@@ -283,7 +321,7 @@ function updateN(dt) {
     case "search": { N.search -= dt; const rm = L.rooms[roomAt(N.f, N.x)] || [0, 0, 300]; if (Math.abs(N.x - N.searchX) < 4) N.searchX = clamp(rm[1] + 40 + Math.random() * (rm[2] - rm[1] - 80), 30, L.W - 30); moveX(N, N.searchX, 70, dt); if (N.search <= 0) { N.state = "routine"; N.acting = false; } break; }
     case "chase": {
       const tgt = sees ? { f: P.climb ? P.climb.f1 : P.f, x: P.x } : N.lastSeen; if (!sees) N.lostT += dt;
-      if (tgt) { if (P.hidden && N.lastSeen) { const arrived = N.f === N.lastSeen.f && Math.abs(N.x - N.lastSeen.x) < 30; if (arrived) { N.findT += dt; if (N.findT > 1.6 && Math.random() < dt * 0.7) { caught(); return; } if (N.findT > 4.5) { N.state = "search"; N.search = 4; N.aware = 0; } } else walkTo(N, tgt.f, tgt.x, CHASE * 0.8, dt); } else walkTo(N, tgt.f, tgt.x, CHASE, dt); }
+      if (tgt) { if (P.hidden && N.lastSeen) { const arrived = N.f === N.lastSeen.f && Math.abs(N.x - N.lastSeen.x) < 30; if (arrived) { N.findT += dt; if (N.findT > 1.6 && Math.random() < dt * 0.7 * (HIDE_RISK[P.hidden[2]] || 1)) { caught(); return; } if (N.findT > 4.5) { N.state = "search"; N.search = 4; N.aware = 0; } } else walkTo(N, tgt.f, tgt.x, CHASE * 0.8, dt); } else walkTo(N, tgt.f, tgt.x, CHASE, dt); }
       if (!P.hidden && !P.climb && P.f === N.f && Math.abs(P.x - N.x) < 26) { caught(); return; }
       if (N.lostT > 3.2 && !P.hidden) { N.state = "search"; N.search = 5; N.aware = 0; say("Where did they go...", 2); }
       break; }
@@ -394,6 +432,8 @@ function drawProp(t, f, x) {
     case "shower": R(x - 36, y - 138, 72, 138, "#ffffff55"); R(x - 36, y - 138, 72, 5, "#9ab"); R(x - 36, y - 138, 4, 138, "#9ab"); R(x + 32, y - 138, 4, 138, "#9ab"); R(x - 3, y - 126, 6, 24, "#7a828a"); R(x - 12, y - 130, 24, 6, "#7a828a"); c.strokeStyle = "#7fd0ff"; c.lineWidth = 1.2; for (let i = 0; i < 6; i++) { const t = ((T0 * 80 + i * 17) % 80); c.beginPath(); c.moveTo(x - 10 + i * 4, y - 122 + t); c.lineTo(x - 10 + i * 4, y - 114 + t); c.stroke(); } break;
     case "bed": R(x - 80, y - 36, 160, 28, "#6a8ee8"); R(x - 80, y - 8, 160, 8, "#6a4a2a"); R(x - 86, y - 70, 14, 70, "#6a4a2a"); rrect(x - 72, y - 50, 44, 16, 8, "#fff"); R(x - 20, y - 36, 100, 8, "#9ab4f5"); break;
     case "wardrobe": R(x - 32, y - 118, 64, 118, "#7a5226"); R(x - 28, y - 114, 27, 110, "#8c6232"); R(x + 1, y - 114, 27, 110, "#8c6232"); R(x - 6, y - 64, 4, 10, "#e0c060"); R(x + 2, y - 64, 4, 10, "#e0c060"); break;
+    case "bin": R(x - 15, y - 40, 30, 40, "#6b7b8c"); R(x - 18, y - 46, 36, 8, "#8294a6"); R(x - 11, y - 34, 3, 28, "#00000030"); R(x + 4, y - 34, 3, 28, "#00000030"); emoji("🍌", x + 4, y - 50, 13, 0.9); break;
+    case "crate": R(x - 28, y - 52, 56, 52, "#b88a52"); c.strokeStyle = "#7a5a2c"; c.lineWidth = 3; c.strokeRect(x - 26, y - 50, 52, 48); c.beginPath(); c.moveTo(x - 26, y - 50); c.lineTo(x + 26, y - 2); c.moveTo(x + 26, y - 50); c.lineTo(x - 26, y - 2); c.stroke(); c.lineWidth = 1; R(x - 12, y - 30, 24, 8, "#e8d9a0"); break;
     case "basket": rrect(x - 18, y - 40, 36, 40, 6, "#c89a5a"); R(x - 16, y - 44, 32, 6, "#a87a3a"); R(x - 6, y - 52, 12, 10, "#e04a5a"); break;
     case "desk": R(x - 62, y - 54, 124, 8, "#a8743a"); R(x - 56, y - 46, 8, 46, "#7a5226"); R(x + 48, y - 46, 8, 46, "#7a5226"); R(x - 18, y - 84, 36, 30, "#16181c"); R(x - 15, y - 81, 30, 24, "#2a6adf"); R(x - 4, y - 54, 8, 4, "#333"); break;
     case "pc": { const wreck = G.flags.pcSmashed; R(x - 66, y - 52, 132, 8, "#a8743a"); R(x - 60, y - 44, 8, 44, "#7a5226"); R(x + 52, y - 44, 8, 44, "#7a5226");
@@ -465,14 +505,53 @@ function drawDillan() {
   if (N.state === "chase") emoji("😡", x, y - 142, 22);
   if (N.sayT > 0 && N.say) { c.font = "bold 13px system-ui"; const tw = c.measureText(N.say).width + 18; c.fillStyle = "#fff"; rrect(x - tw / 2, y - 184, tw, 26, 9, "#fff"); c.fillStyle = "#111"; c.textAlign = "center"; c.fillText(N.say, x, y - 166); R(x - 4, y - 158, 8, 8, "#fff"); }
 }
+function drawHides() {
+  const P = G.P;
+  for (const [f, x, type] of L.hides) {
+    const y = fyOf(f), inside = P.hidden && P.hidden[0] === f && P.hidden[1] === x;
+    if (inside) {
+      if (type === "wardrobe") { R(x - 32, y - 118, 64, 118, "#5a3a16"); R(x - 28, y - 114, 56, 110, "#2a1a08"); emoji("👀", x, y - 84, 22); R(x - 34, y - 118, 5, 118, "#7a5226"); R(x + 29, y - 118, 5, 118, "#7a5226"); }
+      else if (type === "basket" || type === "bin" || type === "crate") { const top = type === "crate" ? 52 : 40; R(x - 22, y - top - 4, 44, 12, "#00000055"); emoji("👀", x, y - top - 2, 20); }
+      else if (type === "underbed" || type === "undertable") { R(x - 60, y - 24, 120, 24, "#00000066"); emoji("👀", x, y - 12, 20); }
+      else { R(x - 30, y - 82, 60, 14, "#00000040"); emoji("👀", x, y - 74, 20); }       // behind sofa / armchair
+      c.font = "bold 11px system-ui"; c.textAlign = "center"; c.fillStyle = "#5dffa0"; c.fillText("hiding", x, y - 140);
+    } else if (!P.hidden) {
+      const near = P.f === f && Math.abs(P.x - x) < 70, a = near ? 1 : 0.5, py = type === "wardrobe" ? y - 134 : type === "underbed" || type === "undertable" ? y - 70 : type === "behindsofa" || type === "behindarm" ? y - 92 : y - 66;
+      const label = near ? `▼ hide: ${HIDE_NAME[type] || type}` : "hide"; c.font = `bold ${near ? 12 : 10}px system-ui`; const tw = c.measureText(label).width + 12;
+      c.globalAlpha = a; rrect(x - tw / 2, py - 12, tw, 17, 8, near ? "#1f7a4acc" : "#1f4a3a99"); c.fillStyle = "#c9ffe0"; c.textAlign = "center"; c.fillText(label, x, py + 1); c.globalAlpha = 1;
+    }
+  }
+}
+function drawHotspots() {
+  const P = G.P;
+  for (const h of Object.values(G.hot)) {
+    const y = fyOf(h.f), yy = h.kind === "floor" ? y - 12 : h.kind === "door" ? y - 128 : h.kind === "sit" ? y - 66 : y - 104;
+    if (h.item) { const wob = Math.sin(T0 * 4 + h.x) * 2; c.fillStyle = "#5dffa044"; c.beginPath(); c.arc(h.x, yy + wob, 21, 0, 7); c.fill(); c.strokeStyle = "#5dffa0"; c.lineWidth = 2; c.beginPath(); c.arc(h.x, yy + wob, 21, 0, 7); c.stroke(); c.lineWidth = 1; emoji(ITEMS[h.item], h.x, yy + wob, h.kind === "floor" ? 22 : 20); c.font = "bold 10px system-ui"; c.fillStyle = "#5dffa0"; c.textAlign = "center"; c.fillText("RIGGED", h.x, yy - 28); continue; }
+    const compat = P.carry && h.acc.includes(P.carry) && !P.hidden, near = Math.abs(h.x - P.x) < 46 && h.f === P.f, pulse = 1 + 0.12 * Math.sin(T0 * 6);
+    if (compat) {
+      c.fillStyle = near ? "#ffd93d55" : "#ffd93d2a"; c.beginPath(); c.arc(h.x, yy, 28 * pulse, 0, 7); c.fill(); c.strokeStyle = "#ffd93d"; c.setLineDash([6, 5]); c.lineWidth = 2.5; c.lineDashOffset = -T0 * 20; c.beginPath(); c.arc(h.x, yy, 24 * pulse, 0, 7); c.stroke(); c.setLineDash([]); c.lineWidth = 1;
+      emoji(ITEMS[P.carry], h.x, yy, 18, 0.7); const bob = Math.sin(T0 * 7) * 4; c.fillStyle = "#ffd93d"; c.beginPath(); c.moveTo(h.x, yy - 32 + bob); c.lineTo(h.x - 9, yy - 46 + bob); c.lineTo(h.x + 9, yy - 46 + bob); c.closePath(); c.fill();
+      const t1 = h.name.toUpperCase(), t2 = TIP[h.kind]; c.font = "bold 12px system-ui"; const tw = Math.max(c.measureText(t1).width, 100) + 14; rrect(h.x - tw / 2, yy - 82, tw, 34, 8, "#1b1b1bdd"); c.fillStyle = "#ffd93d"; c.textAlign = "center"; c.fillText(t1, h.x, yy - 66); c.font = "10px system-ui"; c.fillStyle = "#fff"; c.fillText(t2, h.x, yy - 53);
+    } else {
+      const a = P.carry ? 0.22 : 0.5; c.strokeStyle = "#ffffff"; c.globalAlpha = a; c.setLineDash([3, 4]); c.beginPath(); c.arc(h.x, yy, 17, 0, 7); c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+      const icons = h.acc.slice(0, 3); icons.forEach((it, i) => emoji(ITEMS[it], h.x + (i - (icons.length - 1) / 2) * 15, yy, 13, a + 0.15));
+      if (near && !P.carry) { c.font = "bold 11px system-ui"; const tw = c.measureText(h.name).width + 14; rrect(h.x - tw / 2, yy - 46, tw, 18, 8, "#1b1b1bcc"); c.fillStyle = "#fff"; c.textAlign = "center"; c.fillText(h.name, h.x, yy - 33); }
+    }
+  }
+}
+function drawDillanPlan() {
+  const N = G.N, st = dillanPlan(); if (!st.dest) return; const d = st.dest, y = fyOf(d.f), onScreen = true;
+  if (d.f === N.f && !N.acting) { c.strokeStyle = "#ff9d4daa"; c.setLineDash([6, 8]); c.lineWidth = 3; c.lineDashOffset = -T0 * 30; c.beginPath(); c.moveTo(N.x, y - 4); c.lineTo(d.x, y - 4); c.stroke(); c.setLineDash([]); c.lineWidth = 1; }
+  const bob = Math.sin(T0 * 3) * 3, a = ACT[d.act] || ["❓", d.act]; c.strokeStyle = "#ff9d4d"; c.lineWidth = 2; c.setLineDash([3, 4]); c.beginPath(); c.moveTo(d.x, y - 6); c.lineTo(d.x, y - 112 + bob); c.stroke(); c.setLineDash([]); c.lineWidth = 1;
+  const label = `${N.acting && d === L.routine[N.ri] ? "now" : "next"}: ${a[1]}` + (st.eta > 0.5 ? ` · ${Math.ceil(st.eta)}s` : ""); c.font = "bold 11px system-ui"; const tw = c.measureText(label).width + 32; rrect(d.x - tw / 2, y - 140 + bob, tw, 26, 10, "#7a3a10ee"); emoji(a[0], d.x - tw / 2 + 14, y - 127 + bob, 16); c.font = "bold 11px system-ui"; c.fillStyle = "#fff"; c.textAlign = "left"; c.fillText(label, d.x - tw / 2 + 26, y - 123 + bob);
+}
 function drawWorld() {
   T0 = performance.now() / 1000;
   drawHouse();
   for (const [t, f, x] of L.props) drawProp(t, f, x);
   // hide spots hint + armed traps + items
-  for (const [f, x] of L.hides) if (G.P.hidden && G.P.hidden[0] === f && G.P.hidden[1] === x) { const y = fyOf(f); R(x - 32, y - 118, 64, 118, "#5a3a16"); R(x - 28, y - 114, 56, 110, "#2a1a08"); emoji("👀", x, y - 84, 22); R(x - 34, y - 118, 5, 118, "#7a5226"); R(x + 29, y - 118, 5, 118, "#7a5226"); }
-  for (const h of Object.values(G.hot)) { const y = fyOf(h.f); if (h.item) { const wob = Math.sin(T0 * 4 + h.x) * 2, yy = h.kind === "floor" ? y - 8 : h.kind === "door" ? y - 128 : h.kind === "sit" ? y - 58 : y - 100; emoji(ITEMS[h.item], h.x, yy + wob, h.kind === "floor" ? 22 : 18, 0.92); }
-    else if (G.P.carry && h.acc.includes(G.P.carry) && !G.P.hidden) { const near = Math.abs(h.x - G.P.x) < 46 && h.f === G.P.f; c.strokeStyle = near ? "#ffd93d" : "#ffffff66"; c.setLineDash([5, 5]); c.lineWidth = 2; c.beginPath(); c.arc(h.x, y - (h.kind === "floor" ? 8 : 60), near ? 26 : 18, 0, 7); c.stroke(); c.setLineDash([]); c.lineWidth = 1; emoji(ITEMS[G.P.carry], h.x, y - (h.kind === "floor" ? 8 : 60), 16, 0.5); } }
+  drawHides();
+  drawHotspots(); drawDillanPlan();
   for (const it of G.items) { const y = fyOf(it.f), bob = Math.sin(T0 * 3 + it.x) * 3; c.fillStyle = "#0003"; c.beginPath(); c.ellipse(it.x, y - 2, 12, 4, 0, 0, 7); c.fill(); emoji(ITEMS[it.item], it.x, y - 16 + bob, 26); if (!G.P.carry && !G.P.hidden && Math.abs(it.x - G.P.x) < 38 && it.f === G.P.f) { c.strokeStyle = "#ffd93d"; c.lineWidth = 2; c.beginPath(); c.arc(it.x, y - 16 + bob, 20, 0, 7); c.stroke(); c.lineWidth = 1; } }
   drawDillan(); drawPlayer();
   for (const p of G.parts) emoji(p.e, p.x, p.y, 18, clamp(p.life * 1.6, 0, 1));
@@ -487,10 +566,20 @@ function drawHUD() {
   const bx = Math.min(VW * 0.34, 300), bw = Math.max(110, VW * 0.3), x0 = VW / 2 - bw / 2;
   R(x0, 12, bw, 14, "#000a"); const pct = clamp(G.rating / 100, 0, 1); R(x0, 12, bw * pct, 14, pct > 0.99 ? "#5dffa0" : "#ffd93d"); c.fillStyle = "#fff"; c.font = `bold ${10 * u}px system-ui`; c.textAlign = "center"; c.fillText(`${Math.round(G.rating)}%`, VW / 2, 23);
   c.fillStyle = "#9fb3d4"; c.font = `${11 * u}px system-ui`; c.fillText(`⏱ ${Math.max(0, Math.ceil(G.t))}s`, VW / 2, 40);
-  c.textAlign = "right"; c.font = `${16 * u}px system-ui`; c.fillStyle = "#fff"; c.fillText("❤️".repeat(Math.max(0, G.lives)) + "🖤".repeat(Math.max(0, 3 - G.lives)), VW - (isTouch ? 56 : 14), 20);
-  c.font = `${11 * u}px system-ui`; c.fillStyle = "#9fb3d4"; c.fillText(G.P.carry ? `Carrying: ${ITEMS[G.P.carry]} ${ITEMNAME[G.P.carry]}` : "Carrying: nothing", VW - (isTouch ? 56 : 14), 38);
+  c.textAlign = "right"; c.font = `${16 * u}px system-ui`; c.fillStyle = "#fff"; c.fillText("❤️".repeat(Math.max(0, G.lives)) + "🖤".repeat(Math.max(0, 3 - G.lives)), VW - (isTouch ? 104 : 14), 20);
+  c.font = `${11 * u}px system-ui`; c.fillStyle = "#9fb3d4"; c.fillText(G.P.carry ? `Carrying: ${ITEMS[G.P.carry]} ${ITEMNAME[G.P.carry]}` : "Carrying: nothing", VW - (isTouch ? 104 : 14), 38);
   // contextual hint
-  const msg = G.hintT > 0 && G.hint ? G.hint : G.ctx; if (msg && state === "playing") { c.font = `bold ${13 * u}px system-ui`; const tw = c.measureText(msg).width + 24; R(VW / 2 - tw / 2, 52, tw, 26 * u, "#000a"); c.fillStyle = "#fff"; c.textAlign = "center"; c.fillText(msg, VW / 2, 52 + 17 * u); }
+  if (state === "playing") {
+    const msg = G.hintT > 0 && G.hint ? G.hint : G.ctx;
+    if (msg) { c.font = `bold ${13 * u}px system-ui`; const tw = c.measureText(msg).width + 24; R(VW / 2 - tw / 2, 50, tw, 24 * u, "#000a"); c.fillStyle = "#fff"; c.textAlign = "center"; c.fillText(msg, VW / 2, 50 + 16 * u); }
+    if (G.obj) { c.font = `${12 * u}px system-ui`; const tw = Math.min(VW - 20, c.measureText(G.obj).width + 24); R(VW / 2 - tw / 2, 50 + 28 * u, tw, 22 * u, "#000a"); c.fillStyle = "#ffe9a0"; c.textAlign = "center"; c.fillText(G.obj, VW / 2, 50 + 28 * u + 15 * u); }
+    // Dillan panel: doing now / doing next + his whole routine
+    const pl = dillanPlan(), pw = Math.min(250 * u, VW * 0.34), px0 = 8, py0 = 50; rrect(px0, py0, pw, 66 * u, 10, "#0a1424d0");
+    c.textAlign = "left"; c.fillStyle = "#ffb26b"; c.font = `bold ${10 * u}px system-ui`; c.fillText(`${NAME().toUpperCase()} IS...`, px0 + 8, py0 + 13 * u);
+    c.fillStyle = "#fff"; c.font = `bold ${12 * u}px system-ui`; c.fillText(`${pl.now[0]} ${pl.now[1]}`, px0 + 8, py0 + 28 * u, pw - 14);
+    c.fillStyle = "#9fb3d4"; c.font = `${11 * u}px system-ui`; c.fillText(`Next: ${pl.next[0]} ${pl.next[1]}`, px0 + 8, py0 + 43 * u, pw - 14);
+    L.routine.forEach((s, i) => { const a = ACT[s.act] || ["❓", ""], cx = px0 + 14 + i * (18 * u), act = i === G.N.ri; if (cx + 8 > px0 + pw) return; if (act) { c.fillStyle = "#ff9d4d88"; c.beginPath(); c.arc(cx, py0 + 56 * u, 9 * u, 0, 7); c.fill(); } c.globalAlpha = act ? 1 : 0.6; c.font = `${12 * u}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; c.textAlign = "center"; c.fillText(a[0], cx, py0 + 60 * u); c.globalAlpha = 1; });
+  }
   if (G.P.hidden) { c.fillStyle = "#5dffa0"; c.font = `bold ${13 * u}px system-ui`; c.textAlign = "center"; c.fillText("Hiding... move or tap to come out", VW / 2, VH - 14); }
   if (G.N.state === "chase") { const a = 0.18 + 0.12 * Math.sin(T0 * 12); c.fillStyle = `rgba(255,0,0,${a})`; c.fillRect(0, 44, VW, VH - 44); }
 }
@@ -505,8 +594,16 @@ function draw() {
   camX = L.W + 120 <= viewW ? -(viewW - L.W) / 2 : clamp(camF - viewW / 2, -60, L.W + 60 - viewW);
   c.setTransform(DPR * K, 0, 0, DPR * K, -camX * K * DPR, 46 * DPR + (availH - worldH * K) * DPR / 2);
   drawWorld(); drawHUD();
+  // guide arrows: where the carried item goes (or where to find an item) when it's off screen
+  if (state === "playing" && !G.P.hidden) {
+    const worldH2 = TOP + L.floors * FH + GRD, yOff = 46 + ((VH - 46) - worldH2 * K) / 2, P = G.P; c.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const targets = []; if (P.carry) { for (const h of Object.values(G.hot)) if (!h.item && h.acc.includes(P.carry)) targets.push({ f: h.f, x: h.x, label: h.name, e: ITEMS[P.carry] }); }
+    else { const need = it => Object.values(G.hot).some(h => !h.item && h.acc.includes(it)); for (const it of G.items) if (need(it.item)) targets.push({ f: it.f, x: it.x, label: ITEMNAME[it.item], e: ITEMS[it.item] }); }
+    targets.sort((a, b) => (Math.abs(a.x - P.x) + 500 * Math.abs(a.f - P.f)) - (Math.abs(b.x - P.x) + 500 * Math.abs(b.f - P.f)));
+    let shown = { l: 0, r: 0 }; for (const t of targets.slice(0, 4)) { const sx = (t.x - camX) * K; if (sx > 30 && sx < VW - 30) continue; const left = sx <= 30, side = left ? "l" : "r"; if (shown[side] >= 2) continue; const sy = clamp(yOff + (fyOf(t.f) - 70) * K, 130, VH - 120) + shown[side] * 34; shown[side]++; const txt = (left ? "◀ " : "") + `${t.e} ${t.label}` + (left ? "" : " ▶"); c.font = "bold 12px system-ui"; const tw = c.measureText(txt).width + 16; rrect(left ? 4 : VW - tw - 4, sy - 12, tw, 24, 12, "#ffd93dee"); c.fillStyle = "#222"; c.textAlign = "center"; c.fillText(txt, left ? 4 + tw / 2 : VW - tw / 2 - 4, sy + 4); }
+  }
   // edge marker when Dillan is off screen
-  const ds = (G.N.x - camX) * K; if ((ds < 8 || ds > VW - 8) && state === "playing") { c.setTransform(DPR, 0, 0, DPR, 0, 0); const left = ds < 8; c.fillStyle = "#ff4d5dcc"; rrect(left ? 6 : VW - 96, 88, 90, 26, 13, "#ff4d5dcc"); c.fillStyle = "#fff"; c.font = "bold 12px system-ui"; c.textAlign = "center"; c.fillText((left ? "◀ " : "") + NAME() + (left ? "" : " ▶"), left ? 51 : VW - 51, 105); }
+  const ds = (G.N.x - camX) * K; if ((ds < 8 || ds > VW - 8) && state === "playing") { c.setTransform(DPR, 0, 0, DPR, 0, 0); const left = ds < 8; c.fillStyle = "#ff4d5dcc"; rrect(left ? 6 : VW - 96, VH - 130, 90, 26, 13, "#ff4d5dcc"); c.fillStyle = "#fff"; c.font = "bold 12px system-ui"; c.textAlign = "center"; c.fillText((left ? "◀ " : "") + NAME() + (left ? "" : " ▶"), left ? 51 : VW - 51, VH - 113); }
 }
 
 // ============================================================
@@ -517,7 +614,7 @@ function key(e, down) {
   if (k === "ArrowLeft" || k === "KeyA") { input.left = down; } else if (k === "ArrowRight" || k === "KeyD") { input.right = down; }
   else if (k === "ArrowUp" || k === "KeyW") { if (down && !input.up) input.eUp = true; input.up = down; } else if (k === "ArrowDown" || k === "KeyS") { if (down && !input.down) input.eDown = true; input.down = down; }
   else if (k === "Space" || k === "KeyE") { if (down && !input.act) input.eAct = true; input.act = down; }
-  else if (down && (k === "Escape" || k === "KeyP") && state === "playing") pauseGame(); else if (down && (k === "Escape" || k === "KeyP") && state === "paused") resume(); else return;
+  else if (down && k === "KeyL" && state === "playing") showList(); else if (down && k === "KeyL" && $("list").classList.contains("show")) { $("list").classList.remove("show"); state = "playing"; } else if (down && (k === "Escape" || k === "KeyP") && state === "playing") pauseGame(); else if (down && (k === "Escape" || k === "KeyP") && state === "paused") resume(); else return;
   e.preventDefault();
 }
 addEventListener("keydown", e => { if (state === "playing" || state === "paused") key(e, true); }); addEventListener("keyup", e => key(e, false));
@@ -527,7 +624,14 @@ document.addEventListener("visibilitychange", () => { if (document.hidden && sta
   hold("bL", () => input.left = true, () => input.left = false); hold("bR", () => input.right = true, () => input.right = false);
   hold("bUp", () => { input.eUp = true; }); hold("bDn", () => { input.eDown = true; }); hold("bAct", () => { input.eAct = true; }); hold("bPause", pauseGame);
 })();
-function hideOverlays() { for (const id of ["menu", "pause", "win", "fail"]) $(id).classList.remove("show"); }
+function showList() {
+  if (state !== "playing") return; state = "paused"; input.left = input.right = false; const rows = [];
+  rows.push(`<div class="stat" style="color:#ffd93d"><span>${G.ratingPts || 0} of ${L.target} points</span><b>${Object.values(G.hot).filter(h => h.item).length} rigged</b></div>`);
+  for (const h of Object.values(G.hot)) { const rm = L.rooms[roomAt(h.f, h.x)]; rows.push(`<div class="stat"><span>${h.item ? "✅" : "⬜"} ${h.name} <small>(${FLOORNAME[h.f]}, ${rm ? rm[3] : ""}; ${TIP[h.kind]})</small></span><b>${h.item ? ITEMS[h.item] + " rigged" : h.acc.map(a => ITEMS[a]).join(" ")}</b></div>`); }
+  const lying = G.items.map(i => { const rm = L.rooms[roomAt(i.f, i.x)]; return `${ITEMS[i.item]} ${rm ? rm[3] : ""}`; });
+  $("listSub").textContent = "Match an item to a spot, rig it, then wait for him to walk into it."; $("listBody").innerHTML = rows.join("") + `<h3>Items lying around</h3><div class="help">${lying.join(" &nbsp;·&nbsp; ") || "none left"}</div>`; $("list").classList.add("show");
+}
+function hideOverlays() { for (const id of ["menu", "pause", "win", "fail", "list"]) $(id).classList.remove("show"); }
 function pauseGame() { if (state !== "playing") return; state = "paused"; input.left = input.right = false; $("pause").classList.add("show"); }
 function resume() { if (state !== "paused") return; state = "playing"; $("pause").classList.remove("show"); }
 function toMenu() { state = "menu"; hideOverlays(); $("pad").classList.remove("on"); menuLevel = clamp(curLevel, 1, PROG.max); renderMenu(); $("menu").classList.add("show"); }
@@ -537,11 +641,11 @@ function renderMenu() {
   const sb = $("soundBtns"); sb.replaceChildren(); for (const [v, l] of [[true, "On"], [false, "Off"]]) { const b = document.createElement("button"); b.className = "b" + (SET.sound === v ? " on" : ""); b.textContent = l; b.onclick = () => { SET.sound = v; saveSet(); renderMenu(); }; sb.append(b); }
   $("title").innerHTML = `PRANK <span>${NAME().toUpperCase()}</span>`; document.title = `Prank ${NAME()}`;
   $("helpTxt").innerHTML = (isTouch ? "<b>◀ ▶</b> walk · <b>▲</b> climb stairs · <b>▼</b> hide in a wardrobe / go down stairs · <b>ACT</b> pick up an item, then tap ACT again on a glowing spot to rig a trap." : "<b>← →</b> walk · <b>↑</b> up stairs · <b>↓</b> hide / down stairs · <b>Space</b> pick up / rig / drop.") +
-    ` Then wait for ${NAME()} to walk into it. Fill the TV ratings bar before time runs out. Don't let him see you!`;
+    ` Gold circles show where your item goes (arrows point there if it's off screen). The orange panel shows what ${NAME()} is doing and what he'll do next, so time your traps and hide in a wardrobe, bin, crate or under the furniture. 📋 lists every prank spot. Fill the TV ratings bar before time runs out!`;
 }
 $("nameIn").addEventListener("input", e => { SET.name = e.target.value; saveSet(); renderMenu(); });
 $("startBtn").onclick = () => { SET.name = $("nameIn").value; saveSet(); ac(); startLevel(menuLevel); };
-$("resumeBtn").onclick = resume; $("quitBtn").onclick = toMenu; $("winMenu").onclick = toMenu; $("failMenu").onclick = toMenu;
+$("resumeBtn").onclick = resume; $("listClose").onclick = () => { $("list").classList.remove("show"); state = "playing"; }; $("bList").addEventListener("pointerdown", e => { e.preventDefault(); showList(); }); $("quitBtn").onclick = toMenu; $("winMenu").onclick = toMenu; $("failMenu").onclick = toMenu;
 $("restartBtn").onclick = () => startLevel(curLevel); $("retryBtn").onclick = () => startLevel(curLevel); $("nextBtn").onclick = () => startLevel(curLevel + 1);
 $("fsBtn").onclick = async () => { try { await document.documentElement.requestFullscreen(); if (screen.orientation && screen.orientation.lock) await screen.orientation.lock("landscape"); } catch {} };
 

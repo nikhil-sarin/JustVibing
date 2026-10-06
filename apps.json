@@ -2,7 +2,7 @@
   {
     "id": "tower-defence",
     "name": "Orbital Defence",
-    "description": "Tower defence: 3 maps, 4 towers with branching upgrades, armoured/flying/splitting enemies, targeting modes and abilities.",
+    "description": "Tower defence: Normal/Hard/Insane, 3 maps, 4 towers with branching upgrades, armoured/flying/splitting/elite enemies, targeting modes and abilities.",
     "category": "Games",
     "path": "apps/tower-defence/"
   },

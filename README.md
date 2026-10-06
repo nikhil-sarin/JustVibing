@@ -11,6 +11,7 @@ apps/
   patient-zero/   Patient Zero (Plague Inc-style pandemic strategy)
   magic-sort/     Magic Sort (potion colour-sorting puzzle)
   hardline/       Hardline (first-person wave shooter, raycast 3D engine)
+  smash-dillan-pc/ Smash Dillan PC (first-person stealth, find and hammer the PC)
 ```
 
 ## Adding an app

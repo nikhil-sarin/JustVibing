@@ -26,5 +26,12 @@
     "description": "First-person wave shooter: 6 weapons, armoury between waves, touch or keyboard + mouse. Best in landscape.",
     "category": "Games",
     "path": "apps/hardline/"
+  },
+  {
+    "id": "smash-dillan-pc",
+    "name": "Smash Dillan PC",
+    "description": "First-person stealth: sneak round the house, dodge Dillan, find his PC and hammer it to bits.",
+    "category": "Games",
+    "path": "apps/smash-dillan-pc/"
   }
 ]

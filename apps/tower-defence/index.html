@@ -246,7 +246,7 @@ let G;
 function newGame() {
   PATHS.forEach((P, i) => { if (i) P.start = entryWave(MAP.entries[i - 1]); });
   G = { lives: Math.max(6, Math.round(MAP.lives * DF().lives)), gold: Math.round(MAP.gold * DF().gold), wave: 0, time: 0, towers: [], enemies: [], shots: [], fx: [], queue: [],
-        waveLive: false, over: false, speed: 1, selType: null, sel: null, arm: null, best: bestFor(MAP),
+        waveLive: false, cleared: 0, over: false, speed: 1, selType: null, sel: null, arm: null, best: bestFor(MAP),
         cd: { strike: 0, freeze: 0 } };
   $("over").classList.remove("show");
   refreshUI();
@@ -297,6 +297,7 @@ function previewText(n) {
 }
 function sendWave() {
   if (G.over) return;
+  if (G.queue.length) { toast("Previous wave is still arriving"); return; }
   const eb = Math.round(EARLY_BONUS * DF().bonus); if (G.waveLive) { G.gold += eb; toast(`Early send +${eb} ⚡`); }
   G.wave++;
   const { list, hpMul, armor } = buildWave(G.wave), lanes = activeLanes(G.wave);
@@ -443,6 +444,7 @@ function step(dt) {
     G.waveLive = false;
     const bonus = Math.round((10 + G.wave * 3) * DF().bonus);
     G.gold += bonus;
+    G.cleared = G.wave;
     if (G.wave > G.best) { G.best = G.wave; store.set(bestKey(MAP), G.best); }
     toast(`Wave ${G.wave} cleared  +${bonus} ⚡` + (PATHS.some((P, i) => i && P.start === G.wave + 1) ? "  ·  🚨 new lane next wave!" : ""));
     refreshUI();
@@ -451,8 +453,8 @@ function step(dt) {
 
 function endGame() {
   G.over = true;
-  if (G.wave - 1 > G.best) { G.best = G.wave - 1; store.set(bestKey(MAP), G.best); }
-  $("overtxt").textContent = `${MAP.name} (${DF().label}): you held out until wave ${G.wave}. Best: ${G.best}.`;
+  if (G.cleared > G.best) { G.best = G.cleared; store.set(bestKey(MAP), G.best); }
+  $("overtxt").textContent = `${MAP.name} (${DF().label}): you reached wave ${G.wave} and cleared ${G.cleared}. Best: ${G.best}.`;
   $("over").classList.add("show");
   refreshUI();
 }

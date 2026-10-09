@@ -67,6 +67,7 @@ fetch("apps.json?v=" + Date.now(), { cache: "no-store" }).then(r => r.json()).th
   }));
   render();
 }).catch(() => { grid.innerHTML = '<div class="empty">Couldn\'t load apps.json. Serve this over http(s), not file://.</div>'; });
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>

@@ -187,7 +187,7 @@ const EARLY_BONUS = 8;
 const DIFFS = {
   normal: { label: "Normal", note: "the original",            hpBase: 1.17,  hp: 1,   spd: 1,    rew: 1,   gold: 1,    lives: 1,   size: 1,    bonus: 1,   armor: 0, elite: 0,    eliteFrom: 99, entryShift: 0 },
   hard:   { label: "Hard",   note: "tougher, faster, leaner",  hpBase: 1.215, hp: 1.1,  spd: 1.1,  rew: 0.8,  gold: 0.9,  lives: 0.8,  size: 1.2,  bonus: 0.8,  armor: 2, elite: 0.12, eliteFrom: 6, entryShift: 2 },
-  insane: { label: "Insane", note: "good luck",                hpBase: 1.245, hp: 1.1,  spd: 1.14, rew: 0.65, gold: 0.85, lives: 0.7,  size: 1.25, bonus: 0.65, armor: 4, elite: 0.22, eliteFrom: 5, entryShift: 4 },
+  insane: { label: "Insane", note: "good luck",                hpBase: 1.245, hp: 1.1,  spd: 1.14, rew: 0.65, gold: 0.85, lives: 0.7,  size: 1.25, bonus: 0.65, armor: 4, elite: 0.22, eliteFrom: 5, entryShift: 4, wallFrom: 15, wallMul: 1.8, wallArmor: 8 },
 };
 let DIFFK = (() => { try { const v = JSON.parse(localStorage.getItem("od-diff")); return DIFFS[v] ? v : "hard"; } catch { return "hard"; } })();
 const DF = () => DIFFS[DIFFK];
@@ -287,10 +287,10 @@ function waveCounts(n) {
   return c;
 }
 function buildWave(n) {
-  const d = DF(), list = [], hpMul = Math.pow(d.hpBase, n - 1) * d.hp, counts = waveCounts(n);
+  const d = DF(), list = [], wall = d.wallFrom ? Math.max(0, n - d.wallFrom) : 0, hpMul = Math.pow(d.hpBase, n - 1) * d.hp * Math.pow(d.wallMul || 1, wall), counts = waveCounts(n);
   for (const [kind, count] of Object.entries(counts)) for (let i = 0; i < count; i++) list.push({ kind, gap: KINDS[kind].gap * (kind === "boss" ? 1 : 1 / Math.sqrt(d.size)), elite: kind !== "boss" && n >= d.eliteFrom && Math.random() < d.elite + Math.min(0.2, (n - d.eliteFrom) * 0.01) });
   for (let i = list.length - 1; i > 0; i--) { if (Math.random() < 0.5) { const j = Math.max(0, i - 1 - (Math.random() * 3 | 0)); [list[i], list[j]] = [list[j], list[i]]; } }
-  return { list, hpMul, armor: 4 + n * 0.5 + d.armor };
+  return { list, hpMul, armor: 4 + n * 0.5 + d.armor + wall * (d.wallArmor || 0) };
 }
 function previewText(n) {
   return Object.entries(waveCounts(n)).map(([k, v]) => `${KINDS[k].icon}${v}`).join(" ") + (PATHS.some((P, i) => i && P.start === n) ? " · 🚨NEW LANE" : "");

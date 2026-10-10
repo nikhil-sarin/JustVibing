@@ -165,7 +165,10 @@ const DEFS = {
       a: { name: "Executioner", desc: "huge damage",      mods: { dmg: 1.8, rate: 1.15 } },
       b: { name: "Piercing",    desc: "beam hits a line", mods: { pierce: 1, range: 1.15 } } } },
 };
-const UP_MULT = [0.7, 1.2, 1.8];            // cost multiplier for level 1->2, 2->3 (branch), 3->4 (elite)
+const UP_MULT = [0.9, 1.5, 2.4];            // cost multiplier for level 1->2, 2->3 (branch), 3->4 (elite)
+const MAXL = 10;                              // levels 5+ are 'overclock' ranks: pricey, diminishing returns
+const AUTO_DELAY = 10;                        // seconds after a clear before the next wave launches by itself
+const effL = l => l > 3 ? 3 + (l - 3) * 0.65 : l;
 const MODES = ["first", "last", "strong", "weak", "close"];
 const MODE_LABEL = { first: "First", last: "Last", strong: "Strongest", weak: "Weakest", close: "Closest" };
 const KINDS = {
@@ -185,8 +188,8 @@ const ABILITIES = {
 const EARLY_BONUS = 8;
 // difficulty: scales enemy toughness/speed/numbers and squeezes the economy
 const DIFFS = {
-  normal: { label: "Normal", note: "the original",            hpBase: 1.17,  hp: 1,   spd: 1,    rew: 1,   gold: 1,    lives: 1,   size: 1,    bonus: 1,   armor: 0, elite: 0,    eliteFrom: 99, entryShift: 0 },
-  hard:   { label: "Hard",   note: "tougher, faster, leaner",  hpBase: 1.215, hp: 1.1,  spd: 1.1,  rew: 0.8,  gold: 0.9,  lives: 0.8,  size: 1.2,  bonus: 0.8,  armor: 2, elite: 0.12, eliteFrom: 6, entryShift: 2 },
+  normal: { label: "Normal", note: "the original",            hpBase: 1.17,  easeFrom: 12, easeBase: 1.135, hp: 1,   spd: 1,    rew: 1,   gold: 1,    lives: 1,   size: 1,    bonus: 1,   armor: 0, elite: 0,    eliteFrom: 99, entryShift: 0 },
+  hard:   { label: "Hard",   note: "tougher, faster, leaner",  hpBase: 1.215, easeFrom: 12, easeBase: 1.16, hp: 1.1,  spd: 1.1,  rew: 0.8,  gold: 0.9,  lives: 0.8,  size: 1.2,  bonus: 0.8,  armor: 2, elite: 0.12, eliteFrom: 6, entryShift: 2 },
   insane: { label: "Insane", note: "good luck",                hpBase: 1.245, hp: 1.1,  spd: 1.14, rew: 0.65, gold: 0.85, lives: 0.7,  size: 1.25, bonus: 0.65, armor: 4, elite: 0.22, eliteFrom: 5, entryShift: 4, easeFrom: 12, easeBase: 1.15 },
 };
 let DIFFK = (() => { try { const v = JSON.parse(localStorage.getItem("od-diff")); return DIFFS[v] ? v : "hard"; } catch { return "hard"; } })();
@@ -246,7 +249,7 @@ let G;
 function newGame() {
   PATHS.forEach((P, i) => { if (i) P.start = entryWave(MAP.entries[i - 1]); });
   G = { lives: Math.max(6, Math.round(MAP.lives * DF().lives)), gold: Math.round(MAP.gold * DF().gold), wave: 0, time: 0, towers: [], enemies: [], shots: [], fx: [], queue: [],
-        waveLive: false, cleared: 0, over: false, speed: 1, selType: null, sel: null, arm: null, best: bestFor(MAP),
+        waveLive: false, nextIn: null, cleared: 0, over: false, speed: 1, selType: null, sel: null, arm: null, best: bestFor(MAP),
         cd: { strike: 0, freeze: 0 } };
   $("over").classList.remove("show");
   refreshUI();
@@ -256,7 +259,7 @@ const stars = Array.from({ length: 70 }, () => ({ x: Math.random() * COLS, y: Ma
 
 // ---------- tower maths ----------
 function stats(t) {
-  const d = DEFS[t.type], l = t.level - 1, m = (t.branch && d.branches[t.branch].mods) || {};
+  const d = DEFS[t.type], l = effL(t.level - 1), m = (t.branch && d.branches[t.branch].mods) || {};
   const slow = d.slow ? (m.slow !== undefined ? m.slow : d.slow - 0.1 * l) - (t.branch && t.level >= 4 ? 0.08 : 0) : 1;
   return {
     dmg: d.dmg * (1 + 0.55 * l) * (m.dmg || 1),
@@ -270,7 +273,7 @@ function stats(t) {
     pierce: m.pierce || 0,
   };
 }
-const upCost = t => Math.round(DEFS[t.type].cost * UP_MULT[t.level - 1]);
+const upCost = t => Math.round(DEFS[t.type].cost * (t.level <= 3 ? UP_MULT[t.level - 1] : 2.6 * Math.pow(1.3, t.level - 4)));
 const sellValue = t => Math.round(t.spent * 0.6);
 const needsBranch = t => t.level === 2 && !t.branch;
 
@@ -304,7 +307,7 @@ function sendWave() {
   if (PATHS.some((P, i) => i && P.start === G.wave)) { toast("🚨 NEW ENTRY POINT OPENS!"); for (const i of lanes) if (i && PATHS[i].start === G.wave) { const p = PATHS[i].pts[0]; G.fx.push({ x: clamp(p.x, 0.5, COLS - 0.5), y: clamp(p.y, 0.5, ROWS - 0.5), ring: 1.6, life: 1.2, max: 1.2, c: "#ff5d7a" }); } }
   let at = G.queue.length ? G.queue[G.queue.length - 1].at + 2 : G.time + 0.3;
   for (const it of list) { at += it.gap; G.queue.push({ at, kind: it.kind, hpMul, armor, elite: it.elite, path: lanes[Math.random() * lanes.length | 0] }); }
-  G.waveLive = true;
+  G.waveLive = true; G.nextIn = null;
   refreshUI();
 }
 function makeEnemy(kind, hpMul, armor, d, elite, path) {
@@ -320,7 +323,7 @@ function damage(e, dmg, pierce) {
   e.hp -= (pierce || !e.armor) ? dmg : Math.max(dmg * 0.25, dmg - e.armor);
   if (e.hp <= 0) {
     e.dead = true;
-    G.gold += Math.max(1, Math.round(KINDS[e.kind].reward * DF().rew * (e.elite ? 2 : 1)));
+    G.gold += Math.max(1, Math.round(KINDS[e.kind].reward * DF().rew * (e.elite ? 2 : 1) * (1 + 0.06 * Math.max(0, G.wave - 1))));
     const p = epos(e);
     for (let i = 0; i < 8; i++) G.fx.push({ x: p.x, y: p.y, vx: (Math.random() - .5) * 3, vy: (Math.random() - .5) * 3, life: .5, max: .5, c: KINDS[e.kind].color });
     if (KINDS[e.kind].split) for (let i = 0; i < 2; i++) G.enemies.push(makeEnemy("mini", e.hpMul, 0, Math.max(0, e.d - 0.25 * i), false, e.path));
@@ -441,7 +444,7 @@ function step(dt) {
   G.fx = G.fx.filter(f => f.life > 0);
 
   if (G.waveLive && !G.queue.length && !G.enemies.length && !G.over) {
-    G.waveLive = false;
+    G.waveLive = false; G.nextIn = AUTO_DELAY; G.shown = -1;
     const bonus = Math.round((10 + G.wave * 3) * DF().bonus);
     G.gold += bonus;
     G.cleared = G.wave;
@@ -449,6 +452,14 @@ function step(dt) {
     toast(`Wave ${G.wave} cleared  +${bonus} ⚡` + (PATHS.some((P, i) => i && P.start === G.wave + 1) ? "  ·  🚨 new lane next wave!" : ""));
     refreshUI();
   }
+  autoTick(dt);
+}
+
+function autoTick(dt) {
+  if (G.nextIn === null || G.over) return;
+  G.nextIn -= dt;
+  if (G.nextIn <= 0) { sendWave(); return; }
+  const c = Math.ceil(G.nextIn); if (c !== G.shown) { G.shown = c; refreshUI(); }
 }
 
 function endGame() {
@@ -503,7 +514,7 @@ function refreshUI() {
     b.classList.toggle("on", G.selType === b.dataset.t);
   }
   $("go").querySelector("b").textContent = "Send wave " + (G.wave + 1);
-  $("go").querySelector("small").textContent = previewText(G.wave + 1) + (G.waveLive ? ` · +⚡${Math.round(EARLY_BONUS * DF().bonus)} early` : "");
+  $("go").querySelector("small").textContent = previewText(G.wave + 1) + (G.waveLive ? ` · +⚡${Math.round(EARLY_BONUS * DF().bonus)} early` : G.nextIn !== null ? ` · auto in ${Math.ceil(G.nextIn)}s` : "");
 
   const t = G.sel, up = $("up"), sell = $("sell"), tgt = $("tgt"), br = $("branches"), txt = $("infotxt");
   let showBranches = false;
@@ -524,11 +535,11 @@ function refreshUI() {
       if (s.splash) bits.push(`blast ${s.splash.toFixed(1)}`);
       if (s.chain) bits.push(`chain ×${s.chain}`);
       if (s.pierce) bits.push("pierce");
-      txt.innerHTML = `<b style="color:${d.color}">${d.name}${bn ? " · " + bn.name : ""}</b> Lv ${t.level}${t.level === 4 ? " ★" : ""}<br>${bits.join(" · ")}`;
+      txt.innerHTML = `<b style="color:${d.color}">${d.name}${bn ? " · " + bn.name : ""}</b> Lv ${t.level}${t.level >= 4 ? " ★" : ""}<br>${bits.join(" · ")}`;
     }
     if (needsBranch(t)) { up.disabled = true; up.querySelector("b").textContent = "Pick path"; up.querySelector("small").textContent = "choose above"; }
-    else if (t.level >= 4) { up.disabled = true; up.querySelector("b").textContent = "Max"; up.querySelector("small").textContent = "Lv 4 ★"; }
-    else { up.disabled = G.gold < upCost(t); up.querySelector("b").textContent = t.level === 3 ? "Elite" : "Upgrade"; up.querySelector("small").textContent = `⚡${upCost(t)} → Lv ${t.level + 1}`; }
+    else if (t.level >= MAXL) { up.disabled = true; up.querySelector("b").textContent = "Max"; up.querySelector("small").textContent = `Lv ${MAXL} ★`; }
+    else { up.disabled = G.gold < upCost(t); up.querySelector("b").textContent = t.level === 3 ? "Elite" : t.level >= 4 ? "Overclock" : "Upgrade"; up.querySelector("small").textContent = `⚡${upCost(t)} → Lv ${t.level + 1}`; }
     sell.disabled = false; sell.querySelector("small").textContent = `+⚡${sellValue(t)}`;
     tgt.disabled = false; tgt.querySelector("small").textContent = MODE_LABEL[t.mode || DEFS[t.type].mode || "first"];
   } else {
@@ -549,7 +560,7 @@ document.querySelectorAll("#towers button").forEach(b => b.addEventListener("cli
 $("go").addEventListener("click", sendWave);
 $("speed").addEventListener("click", () => { const seq = [1, 2, 3, 0]; G.speed = seq[(seq.indexOf(G.speed) + 1) % seq.length]; refreshUI(); });
 $("up").addEventListener("click", () => {
-  const t = G.sel; if (!t || t.level >= 4 || needsBranch(t)) return;
+  const t = G.sel; if (!t || t.level >= MAXL || needsBranch(t)) return;
   const c = upCost(t); if (G.gold < c) return;
   G.gold -= c; t.spent += c; t.level++; refreshUI();
 });
@@ -674,7 +685,7 @@ function drawTower(t) {
   }
   ctx.restore();
   ctx.fillStyle = t.flash > 0 ? "#fff" : col; ctx.beginPath(); ctx.arc(x, y, .14, 0, 6.283); ctx.fill();
-  for (let i = 0; i < t.level; i++) { ctx.fillStyle = "#ffd54d"; ctx.beginPath(); ctx.arc(x - (t.level - 1) * .07 + i * .14, y + .3, .035, 0, 6.283); ctx.fill(); }
+  for (let i = 0; i < Math.min(t.level, 5); i++) { ctx.fillStyle = "#ffd54d"; ctx.beginPath(); ctx.arc(x - (t.level - 1) * .07 + i * .14, y + .3, .035, 0, 6.283); ctx.fill(); }
 }
 
 function drawEnemy(e) {

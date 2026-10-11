@@ -306,7 +306,7 @@ function sendWave() {
   const { list, hpMul, armor } = buildWave(G.wave), lanes = activeLanes(G.wave);
   if (PATHS.some((P, i) => i && P.start === G.wave)) { toast("🚨 NEW ENTRY POINT OPENS!"); for (const i of lanes) if (i && PATHS[i].start === G.wave) { const p = PATHS[i].pts[0]; G.fx.push({ x: clamp(p.x, 0.5, COLS - 0.5), y: clamp(p.y, 0.5, ROWS - 0.5), ring: 1.6, life: 1.2, max: 1.2, c: "#ff5d7a" }); } }
   let at = G.queue.length ? G.queue[G.queue.length - 1].at + 2 : G.time + 0.3;
-  for (const it of list) { at += it.gap; G.queue.push({ at, kind: it.kind, hpMul, armor, elite: it.elite, path: lanes[Math.random() * lanes.length | 0] }); }
+  for (const it of list) { at += it.gap; G.queue.push({ at, w: G.wave, kind: it.kind, hpMul, armor, elite: it.elite, path: lanes[Math.random() * lanes.length | 0] }); }
   G.waveLive = true; G.nextIn = null;
   refreshUI();
 }
@@ -316,7 +316,7 @@ function makeEnemy(kind, hpMul, armor, d, elite, path) {
   const verts = Array.from({ length: nv }, (_, i) => ({ a: i / nv * 6.283, r: 0.75 + Math.random() * (kind === "splitter" ? 0.15 : 0.4) }));
   return { kind, d, path: path || 0, hp, max: hp, hpMul, elite: !!elite, spd: k.speed * DF().spd * (elite ? 1.15 : 1), armor: k.armor ? armor : 0, fly: !!k.fly, slowT: 0, slowF: 1, verts, rot: Math.random() * 6, dead: false };
 }
-function spawn(q) { G.enemies.push(makeEnemy(q.kind, q.hpMul, q.armor, 0, q.elite, q.path)); }
+function spawn(q) { const e = makeEnemy(q.kind, q.hpMul, q.armor, 0, q.elite, q.path); e.w = q.w; G.enemies.push(e); }
 
 function damage(e, dmg, pierce) {
   if (e.dead) return;
@@ -326,7 +326,7 @@ function damage(e, dmg, pierce) {
     G.gold += Math.max(1, Math.round(KINDS[e.kind].reward * DF().rew * (e.elite ? 2 : 1) * (1 + 0.06 * Math.max(0, G.wave - 1))));
     const p = epos(e);
     for (let i = 0; i < 8; i++) G.fx.push({ x: p.x, y: p.y, vx: (Math.random() - .5) * 3, vy: (Math.random() - .5) * 3, life: .5, max: .5, c: KINDS[e.kind].color });
-    if (KINDS[e.kind].split) for (let i = 0; i < 2; i++) G.enemies.push(makeEnemy("mini", e.hpMul, 0, Math.max(0, e.d - 0.25 * i), false, e.path));
+    if (KINDS[e.kind].split) for (let i = 0; i < 2; i++) { const m = makeEnemy("mini", e.hpMul, 0, Math.max(0, e.d - 0.25 * i), false, e.path); m.w = e.w; G.enemies.push(m); }
     refreshUI();
   }
 }
@@ -443,15 +443,18 @@ function step(dt) {
   G.shots = G.shots.filter(s => !s.done);
   G.fx = G.fx.filter(f => f.life > 0);
 
-  if (G.waveLive && !G.queue.length && !G.enemies.length && !G.over) {
-    G.waveLive = false; G.nextIn = AUTO_DELAY; G.shown = -1;
-    const bonus = Math.round((10 + G.wave * 3) * DF().bonus);
+  // a wave counts as cleared once it (and every earlier wave) is fully dead, even if later waves were sent early
+  while (!G.over && G.cleared < G.wave) {
+    const w = G.cleared + 1;
+    if (G.queue.some(q => q.w === w) || G.enemies.some(e => e.w === w)) break;
+    G.cleared = w;
+    const bonus = Math.round((10 + w * 3) * DF().bonus);
     G.gold += bonus;
-    G.cleared = G.wave;
-    if (G.wave > G.best) { G.best = G.wave; store.set(bestKey(MAP), G.best); }
-    toast(`Wave ${G.wave} cleared  +${bonus} ⚡` + (PATHS.some((P, i) => i && P.start === G.wave + 1) ? "  ·  🚨 new lane next wave!" : ""));
+    if (w > G.best) { G.best = w; store.set(bestKey(MAP), G.best); }
+    toast(`Wave ${w} cleared  +${bonus} ⚡` + (PATHS.some((P, i) => i && P.start === w + 1) ? "  ·  🚨 new lane next wave!" : ""));
     refreshUI();
   }
+  if (G.waveLive && !G.queue.length && !G.enemies.length && !G.over) { G.waveLive = false; G.nextIn = AUTO_DELAY; G.shown = -1; refreshUI(); }
   autoTick(dt);
 }
 

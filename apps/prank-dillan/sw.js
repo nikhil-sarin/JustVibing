@@ -1,5 +1,5 @@
 // Network-first so updates show up straight away; cache is the offline fallback.
-const CACHE = "prank-dillan-v1";
+const CACHE = "prank-dillan-v2";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", e => {

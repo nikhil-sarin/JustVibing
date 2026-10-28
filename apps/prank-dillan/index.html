@@ -166,11 +166,75 @@ LEVELS[0].props.push(["bin", 0, 945]);
 LEVELS[1].props.push(["bin", 1, 840]);
 LEVELS[2].props.push(["bin", 0, 1250], ["bin", 1, 920]);
 LEVELS[3].props.push(["crate", 0, 370], ["bin", 1, 760]);
+// player-only routes for the earlier houses (ladders and chutes: Dillan never uses them)
+LEVELS[1].stairs.push({ x: 975, a: 0, kind: "ladder" }, { x: 470, a: 0, kind: "chute" });
+LEVELS[2].stairs.push({ x: 810, a: 0, kind: "ladder" }, { x: 170, a: 0, kind: "chute" });
+LEVELS[3].stairs.push({ x: 250, a: 0, kind: "ladder" }, { x: 645, a: 1, kind: "ladder" }, { x: 545, a: 0, kind: "chute" }, { x: 400, a: 1, kind: "chute" });
+
+const SIT = ["whoopee", "glue", "firework"], FLR = ["banana", "marbles", "rope"], BEDA = ["firework", "mousetrap", "spider"], PCA = ["spider", "hammer"];
+const hs = (id, f, x, kind, name, acc) => ({ id, f, x, kind, name, acc });
+LEVELS.push(
+  { name: "The Townhouse", floors: 3, W: 1200, target: 170, time: 340, vig: 1.3,
+    rooms: [[0, 0, 400, "Kitchen", "kitchen"], [0, 400, 800, "Lounge", "lounge"], [0, 800, 1200, "Hall", "hall"], [1, 0, 400, "Bathroom", "bath"], [1, 400, 900, "Bedroom", "bedroom"], [1, 900, 1200, "Landing", "hall"], [2, 0, 600, "Den", "gaming"], [2, 600, 1200, "Study", "study"]],
+    stairs: [{ x: 1000, a: 0 }, { x: 1000, a: 1 }, { x: 1150, a: 0, kind: "ladder" }, { x: 780, a: 1, kind: "ladder" }, { x: 262, a: 0, kind: "chute" }, { x: 440, a: 1, kind: "chute" }],
+    props: [["wardrobe", 0, 30], ["stove", 0, 90], ["table", 0, 180], ["fridge", 0, 350], ["tv", 0, 470], ["sofa", 0, 640], ["painting", 0, 870], ["plant", 0, 905], ["bin", 0, 1100],
+      ["toilet", 1, 80], ["sink", 1, 180], ["shower", 1, 340], ["basket", 1, 375], ["bed", 1, 560], ["window", 1, 700], ["wardrobe", 1, 840], ["plant", 1, 1150],
+      ["router", 2, 60], ["pc", 2, 200], ["gchair", 2, 275], ["window", 2, 450], ["bookcase", 2, 680], ["armchair", 2, 880], ["desk", 2, 1120], ["window", 2, 960]],
+    hot: [hs("pot", 0, 90, "use", "cooking pot", ["pepper"]), hs("sofa", 0, 640, "sit", "sofa", SIT), hs("trapK", 0, 290, "floor", "kitchen floor", FLR), hs("trapH", 0, 880, "floor", "hall floor", FLR),
+      hs("shower", 1, 340, "use", "shower", ["hairdye", "spider"]), hs("door", 1, 400, "door", "bedroom door", ["bucket"]), hs("bed", 1, 560, "use", "bed", BEDA), hs("trapM", 1, 1100, "floor", "landing", FLR),
+      hs("router", 2, 60, "use", "router", ["scissors"]), hs("pc", 2, 200, "use", "gaming PC", PCA), hs("chair", 2, 275, "sit", "gaming chair", SIT), hs("armchair", 2, 880, "sit", "armchair", SIT), hs("trapS", 2, 760, "floor", "study floor", FLR)],
+    items: [["banana", 0, 50], ["pepper", 0, 330], ["whoopee", 0, 500], ["marbles", 0, 860], ["glue", 0, 1060], ["bucket", 1, 60], ["hairdye", 1, 130], ["mousetrap", 1, 860], ["rope", 1, 1120], ["firework", 1, 700], ["scissors", 2, 120], ["hammer", 2, 1180], ["spider", 2, 520], ["banana", 2, 980]],
+    hides: [[0, 30, "wardrobe"], [0, 180, "undertable"], [0, 640, "behindsofa"], [0, 1100, "bin"], [1, 375, "basket"], [1, 560, "underbed"], [1, 840, "wardrobe"], [2, 680 + 0, "undertable"], [2, 880, "behindarm"]],
+    routine: [{ f: 0, x: 90, act: "cook", t: 7, hot: ["pot"] }, { f: 0, x: 640, act: "tv", t: 8, hot: ["sofa"] }, { f: 1, x: 340, act: "shower", t: 8, hot: ["shower"] }, { f: 1, x: 560, act: "sleep", t: 8, hot: ["bed"] },
+      { f: 2, x: 60, act: "router", t: 4, hot: ["router"] }, { f: 2, x: 275, act: "game", t: 12, hot: ["chair", "pc"] }, { f: 2, x: 880, act: "read", t: 8, hot: ["armchair"] }], ri0: 3, start: [0, 400] },
+
+  { name: "The Shared House", floors: 2, W: 1500, target: 190, time: 330, vig: 1.3,
+    rooms: [[0, 0, 450, "Kitchen", "kitchen"], [0, 450, 950, "Lounge", "lounge"], [0, 950, 1500, "Games Room", "gaming"], [1, 0, 500, "Bedroom", "bedroom"], [1, 500, 1000, "Bathroom", "bath"], [1, 1000, 1500, "Study", "study"]],
+    stairs: [{ x: 400, a: 0 }, { x: 1100, a: 0 }, { x: 805, a: 0, kind: "ladder" }, { x: 565, a: 0, kind: "chute" }, { x: 1440, a: 0, kind: "chute" }],
+    props: [["wardrobe", 0, 30], ["stove", 0, 90], ["table", 0, 200], ["fridge", 0, 310], ["tv", 0, 500], ["sofa", 0, 685], ["plant", 0, 860], ["window", 0, 780], ["painting", 0, 600], ["bin", 0, 990], ["pc", 0, 1250], ["gchair", 0, 1325], ["window", 0, 1180],
+      ["bed", 1, 110], ["desk", 1, 270], ["window", 1, 420], ["toilet", 1, 620], ["sink", 1, 720], ["bin", 1, 860], ["shower", 1, 940], ["basket", 1, 975], ["window", 1, 1200], ["armchair", 1, 1300], ["bookcase", 1, 1380]],
+    hot: [hs("pot", 0, 90, "use", "cooking pot", ["pepper"]), hs("trapK", 0, 250, "floor", "kitchen floor", FLR), hs("sofa", 0, 685, "sit", "sofa", SIT), hs("trapL", 0, 560, "floor", "lounge floor", FLR), hs("pc0", 0, 1250, "use", "gaming PC", PCA), hs("chair0", 0, 1325, "sit", "gaming chair", SIT), hs("trapG", 0, 1020, "floor", "games room floor", FLR),
+      hs("bed", 1, 110, "use", "bed", BEDA), hs("door", 1, 500, "door", "bathroom door", ["bucket"]), hs("shower", 1, 940, "use", "shower", ["hairdye", "spider"]), hs("trapB", 1, 680, "floor", "bathroom floor", FLR), hs("armchair", 1, 1300, "sit", "armchair", SIT), hs("trapS", 1, 1180, "floor", "study floor", FLR), hs("router", 1, 1230, "use", "router", ["scissors"])],
+    items: [["banana", 0, 60], ["pepper", 0, 150], ["glue", 0, 400], ["whoopee", 0, 520], ["marbles", 0, 900], ["spider", 0, 1160], ["firework", 0, 1400], ["bucket", 1, 560], ["hairdye", 1, 800], ["scissors", 1, 300], ["rope", 1, 220], ["mousetrap", 1, 450], ["hammer", 1, 1450], ["banana", 1, 1060]],
+    hides: [[0, 30, "wardrobe"], [0, 200, "undertable"], [0, 685, "behindsofa"], [0, 990, "bin"], [1, 110, "underbed"], [1, 270, "undertable"], [1, 860, "bin"], [1, 975, "basket"], [1, 1300, "behindarm"]],
+    routine: [{ f: 0, x: 90, act: "cook", t: 7, hot: ["pot"] }, { f: 0, x: 685, act: "tv", t: 8, hot: ["sofa"] }, { f: 0, x: 1325, act: "game", t: 12, hot: ["chair0", "pc0"] }, { f: 1, x: 940, act: "shower", t: 8, hot: ["shower"] }, { f: 1, x: 110, act: "sleep", t: 8, hot: ["bed"] }, { f: 1, x: 1300, act: "read", t: 8, hot: ["armchair"] }], ri0: 5, start: [0, 560] },
+
+  { name: "The Penthouse", floors: 3, W: 1600, target: 220, time: 380, vig: 1.4,
+    rooms: [[0, 0, 500, "Lobby", "hall"], [0, 500, 1000, "Kitchen", "kitchen"], [0, 1000, 1600, "Lounge", "lounge"], [1, 0, 600, "Bedroom", "bedroom"], [1, 600, 1050, "Bathroom", "bath"], [1, 1050, 1600, "Den", "gaming"], [2, 0, 800, "Study", "study"], [2, 800, 1600, "Games Room", "gaming"]],
+    stairs: [{ x: 800, a: 0 }, { x: 1300, a: 1 }, { x: 1560, a: 0, kind: "ladder" }, { x: 1560, a: 1, kind: "ladder" }, { x: 360, a: 0, kind: "chute" }, { x: 700, a: 1, kind: "chute" }],
+    props: [["wardrobe", 0, 30], ["plant", 0, 120], ["painting", 0, 250], ["bin", 0, 280], ["crate", 0, 440], ["stove", 0, 560], ["fridge", 0, 680], ["window", 0, 760], ["table", 0, 930], ["painting", 0, 1190], ["tv", 0, 1100], ["sofa", 0, 1280], ["plant", 0, 1430],
+      ["wardrobe", 1, 40], ["bed", 1, 160], ["window", 1, 300], ["desk", 1, 470], ["toilet", 1, 640], ["sink", 1, 760], ["shower", 1, 980], ["basket", 1, 1020], ["pc", 1, 1130], ["gchair", 1, 1205], ["router", 1, 1450], ["bin", 1, 1500],
+      ["bookcase", 2, 100], ["armchair", 2, 300], ["desk", 2, 520], ["plant", 2, 650], ["window", 2, 400], ["pc", 2, 900], ["gchair", 2, 975], ["tv", 2, 1150], ["armchair", 2, 1450], ["toolbox", 2, 20]],
+    hot: [hs("pot", 0, 560, "use", "cooking pot", ["pepper"]), hs("trapA", 0, 200, "floor", "lobby floor", FLR), hs("trapK", 0, 620, "floor", "kitchen floor", FLR), hs("sofa", 0, 1280, "sit", "sofa", SIT), hs("trapL", 0, 1050, "floor", "lounge floor", FLR),
+      hs("bed", 1, 160, "use", "bed", BEDA), hs("trapC", 1, 330, "floor", "bedroom floor", FLR.concat("mousetrap")), hs("door", 1, 600, "door", "bathroom door", ["bucket"]), hs("shower", 1, 980, "use", "shower", ["hairdye", "spider"]), hs("pc1", 1, 1130, "use", "gaming PC", PCA), hs("chair1", 1, 1205, "sit", "gaming chair", SIT), hs("router", 1, 1450, "use", "router", ["scissors"]),
+      hs("armchair", 2, 300, "sit", "armchair", SIT), hs("trapS", 2, 520, "floor", "study floor", FLR), hs("pc2", 2, 900, "use", "streaming PC", PCA), hs("chair2", 2, 975, "sit", "streaming chair", SIT), hs("armchair2", 2, 1450, "sit", "reading chair", SIT)],
+    items: [["banana", 0, 60], ["pepper", 0, 600], ["marbles", 0, 380], ["whoopee", 0, 1000], ["glue", 0, 1380], ["firework", 0, 880], ["bucket", 1, 80], ["rope", 1, 380], ["mousetrap", 1, 200], ["hairdye", 1, 690], ["spider", 1, 1090], ["scissors", 1, 1400], ["hammer", 1, 870], ["banana", 2, 60], ["whoopee", 2, 640], ["glue", 2, 1100], ["firework", 2, 1250], ["marbles", 2, 760]],
+    hides: [[0, 30, "wardrobe"], [0, 280, "bin"], [0, 440, "crate"], [0, 930, "undertable"], [0, 1280, "behindsofa"], [1, 40, "wardrobe"], [1, 160, "underbed"], [1, 470, "undertable"], [1, 1020, "basket"], [1, 1500, "bin"], [2, 300, "behindarm"], [2, 520, "undertable"], [2, 1450, "behindarm"]],
+    routine: [{ f: 0, x: 560, act: "cook", t: 7, hot: ["pot"] }, { f: 0, x: 1280, act: "tv", t: 8, hot: ["sofa"] }, { f: 1, x: 1205, act: "game", t: 12, hot: ["chair1", "pc1"] }, { f: 1, x: 1450, act: "router", t: 4, hot: ["router"] }, { f: 1, x: 980, act: "shower", t: 8, hot: ["shower"] }, { f: 1, x: 160, act: "sleep", t: 8, hot: ["bed"] },
+      { f: 2, x: 300, act: "read", t: 8, hot: ["armchair"] }, { f: 2, x: 975, act: "game", t: 12, hot: ["chair2", "pc2"] }, { f: 2, x: 1450, act: "read", t: 8, hot: ["armchair2"] }], ri0: 5, start: [0, 150] },
+
+  { name: "The Tower", floors: 4, W: 1400, target: 250, time: 480, vig: 1.5,
+    rooms: [[0, 0, 450, "Kitchen", "kitchen"], [0, 450, 950, "Dining Room", "lounge"], [0, 950, 1400, "Lounge", "hall"], [1, 0, 500, "Bedroom", "bedroom"], [1, 500, 950, "Bathroom", "bath"], [1, 950, 1400, "Den", "gaming"], [2, 0, 700, "Study", "study"], [2, 700, 1400, "Games Room", "gaming"], [3, 0, 700, "Studio", "gaming"], [3, 700, 1400, "Attic Office", "study"]],
+    stairs: [{ x: 450, a: 0 }, { x: 950, a: 1 }, { x: 450, a: 2 }, { x: 1370, a: 0, kind: "ladder" }, { x: 1370, a: 1, kind: "ladder" }, { x: 1370, a: 2, kind: "ladder" }, { x: 545, a: 0, kind: "chute" }, { x: 400, a: 1, kind: "chute" }, { x: 650, a: 2, kind: "chute" }],
+    props: [["wardrobe", 0, 30], ["stove", 0, 110], ["fridge", 0, 300], ["crate", 0, 370], ["window", 0, 580], ["table", 0, 700], ["painting", 0, 820], ["plant", 0, 1030], ["tv", 0, 1100], ["sofa", 0, 1230],
+      ["wardrobe", 1, 40], ["bed", 1, 150], ["window", 1, 330], ["toilet", 1, 600], ["sink", 1, 700], ["bin", 1, 780], ["shower", 1, 880], ["basket", 1, 920], ["pc", 1, 1100], ["gchair", 1, 1175], ["router", 1, 1300],
+      ["toolbox", 2, 20], ["bookcase", 2, 100], ["armchair", 2, 270], ["desk", 2, 560], ["window", 2, 660], ["pc", 2, 800], ["gchair", 2, 875], ["plant", 2, 1050], ["tv", 2, 1100], ["sofa", 2, 1240],
+      ["router", 3, 80], ["pc", 3, 220], ["gchair", 3, 295], ["plant", 3, 400], ["toolbox", 3, 520], ["window", 3, 600], ["bookcase", 3, 760], ["armchair", 3, 960], ["desk", 3, 1120], ["wardrobe", 3, 1280]],
+    hot: [hs("pot", 0, 110, "use", "cooking pot", ["pepper"]), hs("trapA", 0, 340, "floor", "kitchen floor", FLR), hs("sofa", 0, 1230, "sit", "sofa", SIT),
+      hs("bed", 1, 150, "use", "bed", BEDA), hs("door", 1, 500, "door", "bathroom door", ["bucket"]), hs("shower", 1, 880, "use", "shower", ["hairdye", "spider"]), hs("pc1", 1, 1100, "use", "gaming PC", PCA), hs("chair1", 1, 1175, "sit", "gaming chair", SIT),
+      hs("armchair2", 2, 270, "sit", "armchair", SIT), hs("trapS", 2, 450, "floor", "study floor", FLR), hs("pc2", 2, 800, "use", "streaming PC", PCA), hs("chair2", 2, 875, "sit", "streaming chair", SIT),
+      hs("router", 3, 80, "use", "router", ["scissors"]), hs("pc3", 3, 220, "use", "studio PC", PCA), hs("chair3", 3, 295, "sit", "studio chair", SIT), hs("armchair3", 3, 960, "sit", "office armchair", SIT), hs("trapT", 3, 1120, "floor", "office floor", FLR)],
+    items: [["pepper", 0, 380], ["banana", 0, 60], ["whoopee", 0, 650], ["glue", 0, 1020], ["marbles", 0, 900], ["bucket", 1, 560], ["mousetrap", 1, 290], ["hairdye", 1, 760], ["firework", 1, 1000], ["spider", 1, 1220], ["scissors", 1, 1340],
+      ["rope", 2, 180], ["hammer", 2, 40], ["whoopee", 2, 1000], ["spider", 2, 640], ["glue", 2, 1300], ["hammer", 3, 450], ["firework", 3, 700], ["banana", 3, 880], ["whoopee", 3, 1200]],
+    hides: [[0, 30, "wardrobe"], [0, 370, "crate"], [0, 700, "undertable"], [0, 1230, "behindsofa"], [1, 40, "wardrobe"], [1, 150, "underbed"], [1, 780, "bin"], [1, 920, "basket"], [2, 270, "behindarm"], [2, 560, "undertable"], [2, 1240, "behindsofa"], [3, 960, "behindarm"], [3, 1120, "undertable"], [3, 1280, "wardrobe"]],
+    routine: [{ f: 0, x: 110, act: "cook", t: 7, hot: ["pot"] }, { f: 0, x: 1230, act: "tv", t: 8, hot: ["sofa"] }, { f: 1, x: 1175, act: "game", t: 12, hot: ["chair1", "pc1"] }, { f: 1, x: 880, act: "shower", t: 8, hot: ["shower"] }, { f: 1, x: 150, act: "sleep", t: 8, hot: ["bed"] },
+      { f: 2, x: 270, act: "read", t: 8, hot: ["armchair2"] }, { f: 2, x: 875, act: "game", t: 12, hot: ["chair2", "pc2"] }, { f: 3, x: 80, act: "router", t: 4, hot: ["router"] }, { f: 3, x: 295, act: "game", t: 12, hot: ["chair3", "pc3"] }, { f: 3, x: 960, act: "read", t: 8, hot: ["armchair3"] }], ri0: 4, start: [0, 560] },
+);
 const HIDE_NAME = { wardrobe: "wardrobe", basket: "laundry basket", bin: "bin", crate: "crate", underbed: "under the bed", undertable: "under the table", behindsofa: "behind the sofa", behindarm: "behind the armchair" };
 const HIDE_RISK = { wardrobe: 0.5, basket: 0.8, bin: 1.2, crate: 0.9, underbed: 0.7, undertable: 1.3, behindsofa: 0.9, behindarm: 0.9 };   // chance Dillan finds you when he searches
 const ACT = { tv: ["📺", "watching TV"], cook: ["🍳", "cooking"], eat: ["🍽️", "eating"], shower: ["🚿", "showering"], sleep: ["😴", "sleeping"], game: ["🎮", "gaming"], router: ["📶", "checking the router"], read: ["📖", "reading"] };
 const TIP = { floor: "he walks over this", door: "he walks through here", sit: "he sits here", use: "he uses this" };
-const FLOORNAME = ["Ground floor", "1st floor", "2nd floor"];
+const FLOORNAME = ["Ground floor", "1st floor", "2nd floor", "3rd floor"];
 
 // ============================================================
 // helpers / audio
@@ -212,7 +276,8 @@ const SND = {
 let L = null, G = null, state = "menu", curLevel = 1, menuLevel = 1;
 const input = { left: false, right: false, up: false, down: false, act: false, eUp: false, eDown: false, eAct: false };
 const fyOf = f => TOP + (L.floors - f) * FH;
-const stairFeet = s => ({ xb: s.x - STAIR, xt: s.x + STAIR });
+const ROUTE = { ladder: { dur: 1.7, up: true, down: true }, chute: { dur: 0.45, up: false, down: true } };   // player-only shortcuts: Dillan never uses them and can't see you on them
+const stairFeet = s => ROUTE[s.kind] ? { xb: s.x, xt: s.x } : { xb: s.x - STAIR, xt: s.x + STAIR };
 const roomAt = (f, x) => { let r = -1; L.rooms.forEach((rm, i) => { if (rm[0] === f && x >= rm[1] && x < rm[2]) r = i; }); return r < 0 ? L.rooms.findIndex(rm => rm[0] === f && x >= rm[2] - 1) : r; };
 
 function startLevel(n) {
@@ -222,15 +287,22 @@ function startLevel(n) {
         N: { x: r0.x, f: r0.f, face: -1, state: "routine", ri: L.ri0, acting: false, actT: 0, fired: {}, aware: 0, stun: 0, fx: null, search: 0, searchX: r0.x, lastSeen: null, findT: 0, climb: null, walk: 0, hairGreen: false, say: null, sayT: 0, lostT: 0 },
         texts: [], parts: [], pop: [], flags: {}, catches: 0, winT: 0, comboT: 0, comboN: 0, time: 0, hint: "" };
   G.N.x = r0.x; state = "playing"; hideOverlays(); $("pad").classList.add("on");
-  const hasStairs = L.stairs.length > 0; G.hint = `Episode ${n}: ${L.name}. Grab items, rig traps, then let ${NAME()} walk into them!`; G.hintT = 6;
+  const shortcuts = L.stairs.some(s => ROUTE[s.kind]); G.hint = `Episode ${n}: ${L.name}. Grab items, rig traps, then let ${NAME()} walk into them!` + (shortcuts ? ` 🪜 Ladders and 🧺 chutes are shortcuts ${NAME()} never uses.` : ""); G.hintT = shortcuts ? 8 : 6;
 }
 
 function say(t, s = 2.2) { G.N.say = t; G.N.sayT = s; }
 function floatText(x, f, txt, col = "#fff", big = 1) { G.pop.push({ x, y: fyOf(f) - 100, txt, col, t: 1.4, big }); }
 function nearestStair(f, x, dir) {   // dir +1: climbing up from floor f, -1: down from floor f
-  for (const s of L.stairs) { const { xb, xt } = stairFeet(s); if (dir > 0 && s.a === f && Math.abs(x - xb) < 40) return s; if (dir < 0 && s.a === f - 1 && Math.abs(x - xt) < 40) return s; } return null;
+  let best = null, bd = 40;
+  for (const s of L.stairs) { const r = ROUTE[s.kind]; if (r && !(dir > 0 ? r.up : r.down)) continue; const { xb, xt } = stairFeet(s), d = dir > 0 ? (s.a === f ? Math.abs(x - xb) : 99) : (s.a === f - 1 ? Math.abs(x - xt) : 99); if (d < bd) { bd = d; best = s; } }
+  return best;
 }
-function stairBetween(f, g2) { const a = Math.min(f, g2); return L.stairs.find(s => s.a === a) || null; }
+const climbOf = (s, f0, f1, up) => { const { xb, xt } = stairFeet(s); return { t: 0, dur: ROUTE[s.kind] ? ROUTE[s.kind].dur : 0.8, kind: s.kind, f0, f1, x0: up ? xb : xt, x1: up ? xt : xb }; };
+function stairBetween(f, g2, x, tx) {   // the staircase Dillan takes: the cheapest of the ones he can use
+  const a = Math.min(f, g2), up = g2 > f; let best = null, bc = 1e9;
+  for (const s of L.stairs) { if (s.a !== a || ROUTE[s.kind]) continue; const { xb, xt } = stairFeet(s), cost = Math.abs(x - (up ? xb : xt)) + Math.abs((up ? xt : xb) - (tx === undefined ? x : tx)); if (cost < bc) { bc = cost; best = s; } }
+  return best;
+}
 
 // ============================================================
 // update
@@ -252,8 +324,8 @@ function updatePlayer(dt) {
   if (P.hidden) { if (input.eUp || input.eDown || input.eAct || input.left || input.right) { P.hidden = null; } return; }
   const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
   if (dir) { P.x = clamp(P.x + dir * SPD * dt, 16, L.W - 16); P.face = dir; P.walk += dt * 11; if (Math.floor(P.walk / 3) !== Math.floor((P.walk - dt * 11) / 3)) SND.step(); }
-  if (input.eUp) { const s = nearestStair(P.f, P.x, 1); if (s && s.a + 1 < L.floors) { const { xb, xt } = stairFeet(s); P.climb = { t: 0, dur: 0.8, f0: P.f, f1: P.f + 1, x0: xb, x1: xt }; P.x = xb; } }
-  else if (input.eDown) { const s = nearestStair(P.f, P.x, -1); if (s) { const { xb, xt } = stairFeet(s); P.climb = { t: 0, dur: 0.8, f0: P.f, f1: P.f - 1, x0: xt, x1: xb }; P.x = xt; }
+  if (input.eUp) { const s = nearestStair(P.f, P.x, 1); if (s && s.a + 1 < L.floors) { P.climb = climbOf(s, P.f, P.f + 1, true); P.x = P.climb.x0; } }
+  else if (input.eDown) { const s = nearestStair(P.f, P.x, -1); if (s) { P.climb = climbOf(s, P.f, P.f - 1, false); P.x = P.climb.x0; }
     else { const h = L.hides.find(([f, x]) => f === P.f && Math.abs(x - P.x) < 36); if (h) { P.hidden = h; P.x = h[1]; } } }
   if (input.eAct) doAct();
   // pick up hint text
@@ -279,7 +351,7 @@ function doAct() {
 // ---------- planning info for the HUD ----------
 const WALKSPEED = 82;
 function etaTo(f, x, tf, tx) {   // seconds for Dillan to walk from (f,x) to (tf,tx)
-  let d = 0, t = 0; while (f !== tf) { const dir = Math.sign(tf - f), s = stairBetween(f, f + dir); if (!s) break; const { xb, xt } = stairFeet(s), foot = dir > 0 ? xb : xt; d += Math.abs(x - foot); x = dir > 0 ? xt : xb; t += 0.9; f += dir; } d += Math.abs(x - tx); return d / WALKSPEED + t;
+  let d = 0, t = 0; while (f !== tf) { const dir = Math.sign(tf - f), s = stairBetween(f, f + dir, x, tx); if (!s) break; const { xb, xt } = stairFeet(s), foot = dir > 0 ? xb : xt; d += Math.abs(x - foot); x = dir > 0 ? xt : xb; t += 0.9; f += dir; } d += Math.abs(x - tx); return d / WALKSPEED + t;
 }
 function dillanPlan() {   // what he is doing now, and what he does next
   const N = G.N, n = L.routine.length, cur = L.routine[N.ri], nxt = L.routine[(N.ri + 1) % n], me = N.climb ? { f: N.climb.f1, x: N.climb.x1 } : N;
@@ -301,7 +373,7 @@ function updateObjective() {
 
 // ---------- Dillan ----------
 function seesPlayer() {
-  if (G.blind) return false; const N = G.N, P = G.P; if (P.hidden) return false; const pf = P.climb ? P.climb.f0 : P.f; if (N.climb) return false;
+  if (G.blind) return false; const N = G.N, P = G.P; if (P.hidden || (P.climb && ROUTE[P.climb.kind])) return false; const pf = P.climb ? P.climb.f0 : P.f; if (N.climb) return false;
   const pfl = P.climb ? (P.climb.t > 0.5 ? P.climb.f1 : P.climb.f0) : P.f; if (pfl !== N.f) return false;
   const px = P.climb ? lerp(P.climb.x0, P.climb.x1, P.climb.t) : P.x, d = Math.abs(px - N.x);
   const r1 = roomAt(N.f, N.x), r2 = roomAt(N.f, px), sameRoom = r1 === r2 || [L.rooms[r1], L.rooms[r2]].some(rm => rm && (Math.abs(px - rm[1]) < 26 || Math.abs(px - rm[2]) < 26) && Math.abs(N.x - px) < 70);
@@ -340,7 +412,7 @@ function routineStep(N, dt) {
 function moveX(e, tx, sp, dt) { const dx = tx - e.x, st = Math.min(Math.abs(dx), sp * dt); if (st > 0) { e.x += Math.sign(dx) * st; e.face = Math.sign(dx); } }
 function walkTo(e, tf, tx, sp, dt) {   // true when arrived
   if (e.f !== tf) {
-    const d = Math.sign(tf - e.f), s = stairBetween(e.f, e.f + d); if (!s) return false; const { xb, xt } = stairFeet(s), foot = d > 0 ? xb : xt;
+    const d = Math.sign(tf - e.f), s = stairBetween(e.f, e.f + d, e.x, tx); if (!s) return false; const { xb, xt } = stairFeet(s), foot = d > 0 ? xb : xt;
     if (Math.abs(e.x - foot) > 3) { moveX(e, foot, sp, dt); return false; }
     e.x = foot; e.climb = { t: 0, f0: e.f, f1: e.f + d, x0: foot, x1: d > 0 ? xt : xb }; return false;
   }
@@ -414,6 +486,18 @@ function drawHouse() {
   R(-6, TOP - 4, 8, L.floors * FH + 8, "#5a4636"); R(W - 2, TOP - 4, 8, L.floors * FH + 8, "#5a4636");
   // stairs
   for (const s of L.stairs) { const { xb, xt } = stairFeet(s), y1 = fyOf(s.a), y2 = fyOf(s.a + 1); c.fillStyle = "#8a5a2b"; c.beginPath(); c.moveTo(xb - 14, y1); c.lineTo(xt + 14, y2); c.lineTo(xt + 14, y1); c.closePath(); c.fill(); c.fillStyle = "#b07a3c"; const n = 9; for (let i = 0; i < n; i++) { const t = i / n, xx = lerp(xb - 14, xt + 14, t), yy = lerp(y1, y2, t); R(xx, yy, (xt - xb + 28) / n + 1, 4, "#c99a5a"); } c.strokeStyle = "#5a3a1a"; c.lineWidth = 3; c.beginPath(); c.moveTo(xb - 14, y1 - 52); c.lineTo(xt + 14, y2 - 52); c.stroke(); c.lineWidth = 1; }
+  for (const s of L.stairs) if (ROUTE[s.kind]) drawRoute(s);
+}
+function drawRoute(s) {   // ladders and laundry chutes: routes only you can use
+  const y1 = fyOf(s.a), y2 = fyOf(s.a + 1), x = s.x;
+  if (s.kind === "ladder") {
+    R(x - 11, y2 - 8, 22, 5, "#2a1a10"); R(x - 12, y2 - 6, 3, y1 - y2 + 6, "#9a7a4a"); R(x + 9, y2 - 6, 3, y1 - y2 + 6, "#9a7a4a");
+    for (let y = y2 + 6; y < y1 - 6; y += 14) R(x - 10, y, 20, 3, "#c9a56a");
+    emoji("🪜", x, y2 + 22, 16, 0.9);
+  } else {
+    R(x - 14, y2 - 40, 28, 36, "#5a6570"); R(x - 11, y2 - 37, 22, 30, "#2a3138"); emoji("🧺", x, y2 - 20, 18);
+    R(x - 8, y2 - 4, 16, y1 - y2 - 56, "#7a8590"); R(x - 8, y2 - 4, 3, y1 - y2 - 56, "#ffffff40"); R(x - 12, y1 - 64, 24, 8, "#5a6570"); emoji("🧺", x, y1 - 18, 18, 0.6);
+  }
 }
 function drawProp(t, f, x) {
   const y = fyOf(f);
@@ -641,7 +725,7 @@ function renderMenu() {
   const sb = $("soundBtns"); sb.replaceChildren(); for (const [v, l] of [[true, "On"], [false, "Off"]]) { const b = document.createElement("button"); b.className = "b" + (SET.sound === v ? " on" : ""); b.textContent = l; b.onclick = () => { SET.sound = v; saveSet(); renderMenu(); }; sb.append(b); }
   $("title").innerHTML = `PRANK <span>${NAME().toUpperCase()}</span>`; document.title = `Prank ${NAME()}`;
   $("helpTxt").innerHTML = (isTouch ? "<b>◀ ▶</b> walk · <b>▲</b> climb stairs · <b>▼</b> hide in a wardrobe / go down stairs · <b>ACT</b> pick up an item, then tap ACT again on a glowing spot to rig a trap." : "<b>← →</b> walk · <b>↑</b> up stairs · <b>↓</b> hide / down stairs · <b>Space</b> pick up / rig / drop.") +
-    ` Gold circles show where your item goes (arrows point there if it's off screen). The orange panel shows what ${NAME()} is doing and what he'll do next, so time your traps and hide in a wardrobe, bin, crate or under the furniture. 📋 lists every prank spot. Fill the TV ratings bar before time runs out!`;
+    ` 🪜 Ladders (up and down) and 🧺 laundry chutes (down only) are shortcuts ${NAME()} never uses, and he can\'t see you on them: use them to dodge him between floors. Gold circles show where your item goes (arrows point there if it's off screen). The orange panel shows what ${NAME()} is doing and what he'll do next, so time your traps and hide in a wardrobe, bin, crate or under the furniture. 📋 lists every prank spot. Fill the TV ratings bar before time runs out!`;
 }
 $("nameIn").addEventListener("input", e => { SET.name = e.target.value; saveSet(); renderMenu(); });
 $("startBtn").onclick = () => { SET.name = $("nameIn").value; saveSet(); ac(); startLevel(menuLevel); };

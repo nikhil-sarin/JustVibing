@@ -244,6 +244,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ==
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
 const SET = Object.assign({ name: "Dillan", sound: true }, store.get("pd-settings", {})), saveSet = () => store.set("pd-settings", SET);
 let PROG = Object.assign({ max: 1, stars: {} }, store.get("pd-progress", {}));
+while (PROG.max < LEVELS.length && PROG.stars[PROG.max]) PROG.max++;   // saves from before new episodes were added: finishing the old last one unlocks the next
 const NAME = () => (SET.name || "Dillan").trim() || "Dillan";
 const isTouch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window; if (isTouch) document.body.classList.add("touch");
 const cv = $("cv"), c = cv.getContext("2d");
